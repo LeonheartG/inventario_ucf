@@ -38,11 +38,11 @@
                     <div class="col-md-6">
                         <label for="departamento" class="form-label">Departamento</label>
                         <select class="form-select" id="departamento" name="departamento" required>
-                            <option value="">Seleccione un departamento</option>
-                            {% for dept in form.fields.departamento.queryset %}
-                                <option value="{{ dept.id }}" {% if form.departamento.value == dept.id %}selected{% endif %}>{{ dept.nombre }}</option>
-                            {% endfor %}
-                        </select>
+    <option value="">Seleccione un departamento</option>
+    {% for dept in departamentos %}
+        <option value="{{ dept.id }}">{{ dept.nombre }}</option>
+    {% endfor %}
+</select>
                     </div>
                 </div>
                 
