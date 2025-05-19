@@ -1,0 +1,45 @@
+{% extends 'base/base.html' %}
+
+{% block title %}Gestión de Inventario - UCF{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col-lg-12">
+            <h1 class="display-4">Gestión de Inventario</h1>
+            <p class="lead">Administre los activos tecnológicos de la Universidad de Cienfuegos.</p>
+            <hr class="my-4">
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-4 mb-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Hardware</h5>
+                    <p class="card-text">Gestione los equipos físicos como computadoras, servidores y dispositivos de red.</p>
+                    <a href="{% url 'hardware_list' %}" class="btn btn-primary">Administrar</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Software</h5>
+                    <p class="card-text">Gestione licencias de software, aplicaciones y sistemas operativos.</p>
+                    <a href="{% url 'software_list' %}" class="btn btn-primary">Administrar</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Mantenimiento</h5>
+                    <p class="card-text">Programe y dé seguimiento a los mantenimientos de equipos.</p>
+                    <a href="{% url 'mantenimiento_list' %}" class="btn btn-primary">Administrar</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

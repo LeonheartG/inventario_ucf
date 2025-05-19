@@ -1,0 +1,119 @@
+{% extends 'base/base.html' %}
+
+{% block title %}{% if is_new %}Registrar Software{% else %}Editar Software{% endif %} - UCF{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold">{% if is_new %}Registrar Nuevo Software{% else %}Editar Software{% endif %}</h6>
+        </div>
+        <div class="card-body">
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="nombre" class="form-label">Nombre</label>
+                        <input type="text" class="form-control" id="nombre" name="nombre" value="{{ form.nombre.value|default:'' }}" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="departamento" class="form-label">Departamento</label>
+                        <select class="form-select" id="departamento" name="departamento" required>
+                            <option value="">Seleccione un departamento</option>
+                            {% for dept in form.fields.departamento.queryset %}
+                                <option value="{{ dept.id }}" {% if form.departamento.value == dept.id %}selected{% endif %}>{{ dept.nombre }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <label for="version" class="form-label">Versión</label>
+                        <input type="text" class="form-control" id="version" name="version" value="{{ form.version.value|default:'' }}" required>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="tipo_licencia" class="form-label">Tipo de Licencia</label>
+                        <select class="form-select" id="tipo_licencia" name="tipo_licencia" required>
+                            <option value="">Seleccione un tipo</option>
+                            {% for value, text in form.fields.tipo_licencia.choices %}
+                                <option value="{{ value }}" {% if form.tipo_licencia.value == value %}selected{% endif %}>{{ text }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="numero_licencias" class="form-label">Número de Licencias</label>
+                        <input type="number" class="form-control" id="numero_licencias" name="numero_licencias" value="{{ form.numero_licencias.value|default:'1' }}" min="1">
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="fecha_adquisicion" class="form-label">Fecha de Adquisición</label>
+                        <input type="date" class="form-control" id="fecha_adquisicion" name="fecha_adquisicion" value="{{ form.fecha_adquisicion.value|date:'Y-m-d'|default:'' }}" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="fecha_vencimiento" class="form-label">Fecha de Vencimiento</label>
+                        <input type="date" class="form-control" id="fecha_vencimiento" name="fecha_vencimiento" value="{{ form.fecha_vencimiento.value|date:'Y-m-d'|default:'' }}">
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="clave_activacion" class="form-label">Clave de Activación</label>
+                        <input type="text" class="form-control" id="clave_activacion" name="clave_activacion" value="{{ form.clave_activacion.value|default:'' }}">
+                    </div>
+                    <div class="col-md-6">
+                        <label for="valor_adquisicion" class="form-label">Valor de Adquisición</label>
+                        <div class="input-group">
+                            <span class="input-group-text">$</span>
+                            <input type="number" step="0.01" class="form-control" id="valor_adquisicion" name="valor_adquisicion" value="{{ form.valor_adquisicion.value|default:'' }}" required>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="estado" class="form-label">Estado</label>
+                        <select class="form-select" id="estado" name="estado" required>
+                            {% for value, text in form.fields.estado.choices %}
+                                <option value="{{ value }}" {% if form.estado.value == value %}selected{% endif %}>{{ text }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="proveedor" class="form-label">Proveedor</label>
+                        <select class="form-select" id="proveedor" name="proveedor">
+                            <option value="">Seleccione un proveedor</option>
+                            {% for prov in form.fields.proveedor.queryset %}
+                                <option value="{{ prov.id }}" {% if form.proveedor.value == prov.id %}selected{% endif %}>{{ prov.nombre }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="descripcion" class="form-label">Descripción</label>
+                    <textarea class="form-control" id="descripcion" name="descripcion" rows="3">{{ form.descripcion.value|default:'' }}</textarea>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="imagen" class="form-label">Imagen</label>
+                    <input type="file" class="form-control" id="imagen" name="imagen">
+                    {% if software.activo.imagen %}
+                        <div class="mt-2">
+                            <img src="{{ software.activo.imagen.url }}" alt="{{ software.activo.nombre }}" class="img-thumbnail" style="max-height: 100px;">
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                    <a href="{% url 'software_list' %}" class="btn btn-secondary me-md-2">Cancelar</a>
+                    <button type="submit" class="btn btn-primary">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

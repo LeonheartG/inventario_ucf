@@ -1,0 +1,164 @@
+{% extends 'base/base.html' %}
+
+{% block title %}Detalle de Evaluación - UCF{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Evaluación de Transformación Digital</h1>
+        <div>
+            <a href="{% url 'evaluacion_respuestas' pk=diagnostico.id %}" class="btn btn-primary">
+                <i class="fas fa-clipboard-check"></i> Respuestas
+            </a>
+            <a href="{% url 'evaluacion_edit' pk=diagnostico.id %}" class="btn btn-warning">
+                <i class="fas fa-edit"></i> Editar
+            </a>
+            <a href="{% url 'evaluacion_list' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Volver
+            </a>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-lg-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold">Información Básica</h6>
+                </div>
+                <div class="card-body">
+                    <table class="table table-striped">
+                        <tr>
+                            <th>Departamento:</th>
+                            <td>{{ diagnostico.departamento.nombre }}</td>
+                        </tr>
+                        <tr>
+                            <th>Cuestionario:</th>
+                            <td>{{ diagnostico.cuestionario.titulo }}</td>
+                        </tr>
+                        <tr>
+                            <th>Fecha:</th>
+                            <td>{{ diagnostico.fecha|date:"d/m/Y H:i" }}</td>
+                        </tr>
+                        <tr>
+                            <th>Responsable:</th>
+                            <td>{{ diagnostico.responsable.get_full_name }}</td>
+                        </tr>
+                        <tr>
+                            <th>Nivel General:</th>
+                            <td>
+                                {% if diagnostico.nivel_general %}
+                                    <span class="badge 
+                                        {% if diagnostico.nivel_general < 2 %}bg-danger
+                                        {% elif diagnostico.nivel_general < 3 %}bg-warning
+                                        {% elif diagnostico.nivel_general < 4 %}bg-info
+                                        {% else %}bg-success{% endif %}">
+                                        {{ diagnostico.nivel_general|floatformat:1 }} / 5
+                                    </span>
+                                {% else %}
+                                    <span class="text-muted">No evaluado</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    </table>
+                    
+                    {% if diagnostico.observaciones %}
+                    <div class="mt-3">
+                        <h6>Observaciones</h6>
+                        <div class="border p-3 bg-light">
+                            {{ diagnostico.observaciones|linebreaks }}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-8">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold">Indicadores por Categoría</h6>
+                </div>
+                <div class="card-body">
+                    {% if indicadores %}
+                        <div class="table-responsive">
+                            <table class="table table-bordered">
+                                <thead>
+                                    <tr>
+                                        <th>Categoría</th>
+                                        <th>Valor</th>
+                                        <th>Nivel</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for indicador in indicadores %}
+                                        <tr>
+                                            <td>{{ indicador.nombre }}</td>
+                                            <td width="15%">{{ indicador.valor|floatformat:1 }}</td>
+                                            <td width="50%">
+                                                {% if indicador.valor < 2 %}
+                                                    <span class="badge bg-danger">Bajo ({{ indicador.valor|floatformat:1 }})</span>
+                                                {% elif indicador.valor < 3 %}
+                                                    <span class="badge bg-warning">Medio-Bajo ({{ indicador.valor|floatformat:1 }})</span>
+                                                {% elif indicador.valor < 4 %}
+                                                    <span class="badge bg-info">Medio-Alto ({{ indicador.valor|floatformat:1 }})</span>
+                                                {% else %}
+                                                    <span class="badge bg-success">Alto ({{ indicador.valor|floatformat:1 }})</span>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-info">
+                            No hay indicadores disponibles. Complete la evaluación para generar indicadores.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold">Recomendaciones</h6>
+                </div>
+                <div class="card-body">
+                    {% if indicadores %}
+                        <div class="list-group">
+                            {% for indicador in indicadores %}
+                                {% if indicador.recomendacion %}
+                                    <div class="list-group-item">
+                                        <div class="d-flex w-100 justify-content-between mb-1">
+                                            <h5 class="mb-1">{{ indicador.nombre }}</h5>
+                                            <span class="badge 
+                                                {% if indicador.valor < 2 %}bg-danger
+                                                {% elif indicador.valor < 3 %}bg-warning
+                                                {% elif indicador.valor < 4 %}bg-info
+                                                {% else %}bg-success{% endif %}">
+                                                {{ indicador.valor|floatformat:1 }}
+                                            </span>
+                                        </div>
+                                        <p class="mb-1">{{ indicador.recomendacion }}</p>
+                                    </div>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="alert alert-info">
+                            No hay recomendaciones disponibles. Complete la evaluación para recibir recomendaciones.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+{% endblock %}

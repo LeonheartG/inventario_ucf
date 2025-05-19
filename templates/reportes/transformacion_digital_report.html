@@ -1,0 +1,101 @@
+{% extends 'base/base.html' %}
+
+{% block title %}Reporte de Transformación Digital - UCF{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col-lg-12">
+            <h1>Reporte de Transformación Digital</h1>
+            <hr>
+        </div>
+    </div>
+    
+    <div class="row mb-4">
+        <div class="col-lg-12">
+            <div class="card shadow">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold">Filtros</h6>
+                </div>
+                <div class="card-body">
+                    <form method="get" class="row g-3">
+                        <div class="col-md-4">
+                            <label for="departamento" class="form-label">Departamento</label>
+                            <select class="form-select" id="departamento" name="departamento">
+                                <option value="">Todos</option>
+                                {% for dept in form.fields.departamento.queryset %}
+                                    <option value="{{ dept.id }}" {% if form.departamento.value == dept.id %}selected{% endif %}>
+                                        {{ dept.nombre }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="fecha_inicio" class="form-label">Fecha desde</label>
+                            <input type="date" class="form-control" id="fecha_inicio" name="fecha_inicio" value="{{ form.fecha_inicio.value|date:'Y-m-d'|default:'' }}">
+                        </div>
+                        <div class="col-md-4">
+                            <label for="fecha_fin" class="form-label">Fecha hasta</label>
+                            <input type="date" class="form-control" id="fecha_fin" name="fecha_fin" value="{{ form.fecha_fin.value|date:'Y-m-d'|default:'' }}">
+                        </div>
+                        <div class="col-md-4">
+                            <label for="formato" class="form-label">Formato</label>
+                            <select class="form-select" id="formato" name="formato">
+                                <option value="html" {% if form.formato.value == 'html' %}selected{% endif %}>HTML</option>
+                                <option value="pdf" {% if form.formato.value == 'pdf' %}selected{% endif %}>PDF</option>
+                                <option value="csv" {% if form.formato.value == 'csv' %}selected{% endif %}>CSV</option>
+                                <option value="excel" {% if form.formato.value == 'excel' %}selected{% endif %}>Excel</option>
+                            </select>
+                        </div>
+                        <div class="col-12 mt-3 text-end">
+                            <button type="submit" class="btn btn-primary">Generar Reporte</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row mb-4">
+        <div class="col-lg-12">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold">Información sobre Transformación Digital</h6>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <h5><i class="fas fa-info-circle"></i> ¿Qué es la Transformación Digital?</h5>
+                        <p>La transformación digital es el proceso de integración de tecnologías digitales en todas las áreas de una organización, modificando fundamentalmente la forma en que opera y brinda valor a sus clientes, empleados y demás interesados.</p>
+                        <p>En el contexto de la Universidad de Cienfuegos, esta transformación implica no solo la incorporación de nuevas herramientas tecnológicas, sino también cambios culturales, estructurales y de procesos que permitan mejorar la calidad educativa, la eficiencia administrativa y la proyección social de la institución.</p>
+                    </div>
+                    
+                    <div class="row mt-4">
+                        <div class="col-md-6 mb-3">
+                            <div class="card h-100">
+                                <div class="card-body text-center">
+                                    <h5 class="card-title">Evaluaciones de Transformación Digital</h5>
+                                    <p class="card-text">Consulte las evaluaciones realizadas por departamento.</p>
+                                    <a href="{% url 'evaluacion_list' %}" class="btn btn-primary">Ver Evaluaciones</a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="card h-100">
+                                <div class="card-body text-center">
+                                    <h5 class="card-title">Indicadores</h5>
+                                    <p class="card-text">Consulte los indicadores de transformación digital de la institución.</p>
+                                    <a href="{% url 'indicador_list' %}" class="btn btn-primary">Ver Indicadores</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+{% endblock %}

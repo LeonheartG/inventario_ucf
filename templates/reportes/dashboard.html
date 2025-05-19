@@ -1,0 +1,349 @@
+{% extends 'base/base.html' %}
+
+{% block title %}Dashboard - UCF{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col-lg-12">
+            <h1>Dashboard</h1>
+            <p class="lead">Resumen del Sistema Integral para la Gestión de Inventarios Tecnológicos</p>
+            <hr>
+        </div>
+    </div>
+    
+    <!-- Cards de Resumen -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Total de Activos</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_activos }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-clipboard-list fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                Hardware</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_hardware }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-desktop fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                Software</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_software }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-file-code fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                Mantenimientos Pendientes</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ mantenimientos_pendientes }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-tools fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Gráficos y Tablas -->
+    <div class="row">
+        <!-- Activos por Departamento -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold">Activos por Departamento</h6>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>Departamento</th>
+                                    <th>Cantidad</th>
+                                    <th>Porcentaje</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% if activos_por_departamento %}
+                                    {% for item in activos_por_departamento %}
+                                        <tr>
+                                            <td>{{ item.departamento__nombre }}</td>
+                                            <td>{{ item.total }}</td>
+                                            <td>{{ item.porcentaje|floatformat:1 }}%</td>
+                                        </tr>
+                                    {% endfor %}
+                                {% else %}
+                                    <tr>
+                                        <td colspan="3" class="text-center">No hay datos disponibles</td>
+                                    </tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Activos por Estado -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold">Activos por Estado</h6>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>Estado</th>
+                                    <th>Cantidad</th>
+                                    <th>Porcentaje</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% if activos_por_estado %}
+                                    {% for item in activos_por_estado %}
+                                        <tr>
+                                            <td>
+                                                {% if item.estado == 'activo' %}
+                                                    <span class="badge bg-success">Activo</span>
+                                                {% elif item.estado == 'en_mantenimiento' %}
+                                                    <span class="badge bg-warning">En Mantenimiento</span>
+                                                {% elif item.estado == 'obsoleto' %}
+                                                    <span class="badge bg-danger">Obsoleto</span>
+                                                {% elif item.estado == 'baja' %}
+                                                    <span class="badge bg-secondary">De Baja</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>{{ item.total }}</td>
+                                            <td>{{ item.porcentaje|floatformat:1 }}%</td>
+                                        </tr>
+                                    {% endfor %}
+                                {% else %}
+                                    <tr>
+                                        <td colspan="3" class="text-center">No hay datos disponibles</td>
+                                    </tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <!-- Software por Vencer -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold">Software con Licencia por Vencer</h6>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>Software</th>
+                                    <th>Versión</th>
+                                    <th>Fecha Vencimiento</th>
+                                    <th>Días Restantes</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% if software_por_vencer %}
+                                    {% for software in software_por_vencer %}
+                                        <tr>
+                                            <td>{{ software.activo.nombre }}</td>
+                                            <td>{{ software.version }}</td>
+                                            <td>{{ software.fecha_vencimiento }}</td>
+                                            <td>
+                                                <span class="badge {% if software.dias_restantes < 7 %}bg-danger{% elif software.dias_restantes < 15 %}bg-warning{% else %}bg-info{% endif %}">
+                                                    {{ software.dias_restantes }} días
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                {% else %}
+                                    <tr>
+                                        <td colspan="4" class="text-center">No hay software con licencia por vencer en los próximos 30 días</td>
+                                    </tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Mantenimientos Recientes -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold">Mantenimientos Recientes</h6>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>Activo</th>
+                                    <th>Tipo</th>
+                                    <th>Fecha</th>
+                                    <th>Estado</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% if mantenimientos_recientes %}
+                                    {% for mantenimiento in mantenimientos_recientes %}
+                                        <tr>
+                                            <td>{{ mantenimiento.activo.nombre }}</td>
+                                            <td>{{ mantenimiento.get_tipo_display }}</td>
+                                            <td>{{ mantenimiento.fecha_realizacion }}</td>
+                                            <td>
+                                                <span class="badge bg-success">Completado</span>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                {% else %}
+                                    <tr>
+                                        <td colspan="4" class="text-center">No hay mantenimientos recientes realizados</td>
+                                    </tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Transformación Digital -->
+    <div class="row">
+        <div class="col-lg-12 mb-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold">Nivel de Transformación Digital</h6>
+                </div>
+                <div class="card-body">
+                    <div class="mb-4">
+                        <h5>Nivel General: 
+                            {% if nivel_transformacion %}
+                                <span class="badge {% if nivel_transformacion < 2 %}bg-danger{% elif nivel_transformacion < 3 %}bg-warning{% elif nivel_transformacion < 4 %}bg-info{% else %}bg-success{% endif %}">
+                                    {{ nivel_transformacion|floatformat:2 }} / 5
+                                </span>
+                            {% else %}
+                                <span class="badge bg-secondary">No evaluado</span>
+                            {% endif %}
+                        </h5>
+                    </div>
+                    
+                    {% if nivel_transformacion %}
+                        <div class="alert {% if nivel_transformacion < 2 %}alert-danger{% elif nivel_transformacion < 3 %}alert-warning{% elif nivel_transformacion < 4 %}alert-info{% else %}alert-success{% endif %}">
+                            <i class="fas fa-info-circle"></i> 
+                            {% if nivel_transformacion < 2 %}
+                                La universidad tiene un nivel básico de transformación digital. Es necesario implementar mejoras significativas en este aspecto.
+                            {% elif nivel_transformacion < 3 %}
+                                La universidad tiene un nivel medio-bajo de transformación digital. Se han dado pasos importantes pero se requiere mayor avance.
+                            {% elif nivel_transformacion < 4 %}
+                                La universidad tiene un buen nivel de transformación digital. Continuar con las iniciativas actuales.
+                            {% else %}
+                                La universidad tiene un excelente nivel de transformación digital. Mantener las buenas prácticas implementadas.
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                    
+                    <div class="mt-3">
+                        <a href="{% url 'transformacion_digital_report' %}" class="btn btn-primary">
+                            <i class="fas fa-chart-line"></i> Ver Reporte Completo
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Actividad Reciente -->
+    <div class="row">
+        <div class="col-lg-12 mb-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold">Actividad Reciente</h6>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>Usuario</th>
+                                    <th>Acción</th>
+                                    <th>Fecha</th>
+                                    <th>Detalles</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% if actividades %}
+                                    {% for actividad in actividades %}
+                                        <tr>
+                                            <td>{{ actividad.usuario.get_full_name|default:actividad.usuario.username }}</td>
+                                            <td>{{ actividad.accion }}</td>
+                                            <td>{{ actividad.fecha|date:"d/m/Y H:i" }}</td>
+                                            <td>{{ actividad.detalles|truncatechars:50 }}</td>
+                                        </tr>
+                                    {% endfor %}
+                                {% else %}
+                                    <tr>
+                                        <td colspan="4" class="text-center">No hay actividades recientes registradas</td>
+                                    </tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+{% endblock %}

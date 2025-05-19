@@ -1,0 +1,45 @@
+{% extends 'base/base.html' %}
+
+{% block title %}Diagnóstico de Transformación Digital - UCF{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col-lg-12">
+            <h1 class="display-4">Diagnóstico de Transformación Digital</h1>
+            <p class="lead">Evalúe el nivel de transformación digital en la Universidad de Cienfuegos.</p>
+            <hr class="my-4">
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-4 mb-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Cuestionarios</h5>
+                    <p class="card-text">Administre los cuestionarios de evaluación.</p>
+                    <a href="{% url 'cuestionario_list' %}" class="btn btn-primary">Administrar</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Evaluaciones</h5>
+                    <p class="card-text">Realice y consulte evaluaciones de transformación digital.</p>
+                    <a href="{% url 'evaluacion_list' %}" class="btn btn-primary">Administrar</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Indicadores</h5>
+                    <p class="card-text">Consulte los indicadores de transformación digital.</p>
+                    <a href="{% url 'indicador_list' %}" class="btn btn-primary">Administrar</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

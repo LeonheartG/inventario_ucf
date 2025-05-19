@@ -1,0 +1,51 @@
+{% extends 'base/base.html' %}
+
+{% block title %}Iniciar Sesión - UCF{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-lg-5 col-md-7">
+            <div class="card shadow-lg mt-5">
+                <div class="card-header bg-primary text-white text-center py-3">
+                    <h3 class="mb-0">Iniciar Sesión</h3>
+                </div>
+                <div class="card-body p-4">
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                    
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="username" class="form-label">Usuario</label>
+                            <input type="text" class="form-control" id="username" name="username" required autofocus>
+                        </div>
+                        <div class="mb-3">
+                            <label for="password" class="form-label">Contraseña</label>
+                            <input type="password" class="form-control" id="password" name="password" required>
+                        </div>
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" id="remember_me" name="remember_me">
+                            <label class="form-check-label" for="remember_me">Recordarme</label>
+                        </div>
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary">Iniciar Sesión</button>
+                        </div>
+                    </form>
+                </div>
+                <div class="card-footer text-center bg-light py-3">
+                    <div class="small">
+                        <a href="{% url 'registro' %}">¿No tiene una cuenta? ¡Regístrese!</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

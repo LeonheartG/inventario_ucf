@@ -1,0 +1,248 @@
+/* static/css/main.css */
+:root {
+    --primary: #006699;    /* Azul marino del logo UCF */
+    --secondary: #3399CC;  /* Azul celeste del logo UCF */
+    --tertiary: #48A5C6;   /* Azul más claro */
+    --light: #F5F5F5;      /* Gris muy claro para fondos */
+    --dark: #333333;       /* Gris oscuro para texto principal */
+    --gray: #666666;       /* Gris medio para texto secundario */
+    --white: #FFFFFF;      /* Blanco para texto sobre fondos oscuros */
+    --light-gray: #E0E0E0; /* Gris claro para bordes y separadores */
+}
+
+/* Elementos generales */
+body {
+    font-family: 'Roboto', 'Segoe UI', 'Arial', sans-serif;
+    color: var(--dark);
+    background-color: var(--light);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+main {
+    flex-grow: 1;
+}
+
+/* Estilos de texto para legibilidad */
+h1, h2, h3, h4, h5, h6 {
+    color: var(--dark);
+    font-weight: 600;
+}
+
+p, li, td, th, input, select, textarea {
+    color: var(--dark);
+}
+
+/* Links con mejor contraste */
+a {
+    color: var(--primary);
+    text-decoration: none;
+    transition: color 0.2s;
+}
+
+a:hover {
+    color: var(--secondary);
+    text-decoration: underline;
+}
+
+/* Navbar personalizada */
+.navbar-dark.bg-primary {
+    background-color: var(--primary) !important;
+}
+
+.navbar-dark .navbar-nav .nav-link {
+    color: var(--white);
+}
+
+.navbar-brand {
+    color: var(--white) !important;
+}
+
+.navbar-brand img {
+    transition: transform 0.3s ease;
+}
+
+.navbar-brand:hover img {
+    transform: scale(1.05);
+}
+
+/* Dropdown menus con mejor contraste */
+.dropdown-menu {
+    background-color: var(--white);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.dropdown-item {
+    color: var(--dark);
+}
+
+.dropdown-item:hover, .dropdown-item:focus {
+    background-color: var(--light);
+    color: var(--primary);
+}
+
+/* Botones personalizados */
+.btn-primary {
+    background-color: var(--primary);
+    border-color: var(--primary);
+    color: var(--white);
+}
+
+.btn-primary:hover, .btn-primary:focus {
+    background-color: #005588;
+    border-color: #004477;
+    color: var(--white);
+}
+
+.btn-secondary {
+    background-color: var(--secondary);
+    border-color: var(--secondary);
+    color: var(--white);
+}
+
+.btn-secondary:hover, .btn-secondary:focus {
+    background-color: #2288bb;
+    border-color: #1177aa;
+    color: var(--white);
+}
+
+/* Cards con mejor contraste */
+.card {
+    border: none;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    background-color: var(--white);
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
+}
+
+.card-header {
+    background-color: var(--primary);
+    color: var(--white);
+    border-radius: 10px 10px 0 0 !important;
+    font-weight: 600;
+}
+
+.card-header .m-0 {
+    color: var(--white);
+}
+
+.card-title {
+    color: var(--primary);
+    font-weight: 600;
+}
+
+.card-text {
+    color: var(--dark);
+}
+
+/* Tablas con mejor contraste */
+.table {
+    color: var(--dark);
+}
+
+.table thead th {
+    background-color: var(--light-gray);
+    color: var(--dark);
+    font-weight: 600;
+}
+
+.table-light, .table-light > th, .table-light > td {
+    background-color: var(--light-gray);
+}
+
+/* Badges con mejor contraste */
+.badge {
+    font-weight: 500;
+    padding: 0.4em 0.8em;
+}
+
+.badge.bg-success {
+    background-color: #28a745 !important;
+    color: var(--white);
+}
+
+.badge.bg-warning {
+    background-color: #ffc107 !important;
+    color: var(--dark);
+}
+
+.badge.bg-danger {
+    background-color: #dc3545 !important;
+    color: var(--white);
+}
+
+.badge.bg-secondary {
+    background-color: #6c757d !important;
+    color: var(--white);
+}
+
+.badge.bg-info {
+    background-color: var(--secondary) !important;
+    color: var(--white);
+}
+
+/* Animaciones */
+.fade-in {
+    animation: fadeIn 0.5s;
+}
+
+@keyframes fadeIn {
+    0% { opacity: 0; }
+    100% { opacity: 1; }
+}
+
+/* Dashboard elements */
+.dashboard-card {
+    height: 100%;
+    min-height: 200px;
+}
+
+.dashboard-icon {
+    font-size: 3rem;
+    color: var(--secondary);
+}
+
+/* Form elements con mejor contraste */
+.form-control, .form-select {
+    color: var(--dark);
+    border: 1px solid var(--light-gray);
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: var(--secondary);
+    box-shadow: 0 0 0 0.25rem rgba(51, 153, 204, 0.25);
+    color: var(--dark);
+}
+
+.form-label {
+    color: var(--dark);
+    font-weight: 500;
+}
+
+.form-check-label {
+    color: var(--dark);
+}
+
+/* Footer */
+footer {
+    background-color: var(--primary) !important;
+    color: var(--white);
+}
+
+footer p {
+    color: var(--white);
+    margin-bottom: 0;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .navbar-brand span {
+        display: none;
+    }
+}

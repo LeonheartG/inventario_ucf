@@ -1,0 +1,93 @@
+{% extends 'base/base.html' %}
+
+{% block title %}{% if is_new %}Registrar Local{% else %}Editar Local{% endif %} - UCF{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold">{% if is_new %}Registrar Nuevo Local{% else %}Editar Local{% endif %}</h6>
+        </div>
+        <div class="card-body">
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="nombre" class="form-label">Nombre</label>
+                        <input type="text" class="form-control" id="nombre" name="nombre" value="{{ form.nombre.value|default:'' }}" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="tipo" class="form-label">Tipo</label>
+                        <select class="form-select" id="tipo" name="tipo" required>
+                            <option value="">Seleccione un tipo</option>
+                            <option value="laboratorio" {% if form.tipo.value == 'laboratorio' %}selected{% endif %}>Laboratorio</option>
+                            <option value="aula" {% if form.tipo.value == 'aula' %}selected{% endif %}>Aula</option>
+                            <option value="sala" {% if form.tipo.value == 'sala' %}selected{% endif %}>Sala de Conferencias</option>
+                            <option value="oficina" {% if form.tipo.value == 'oficina' %}selected{% endif %}>Oficina</option>
+                            <option value="otro" {% if form.tipo.value == 'otro' %}selected{% endif %}>Otro</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="capacidad" class="form-label">Capacidad</label>
+                        <input type="number" class="form-control" id="capacidad" name="capacidad" value="{{ form.capacidad.value|default:'0' }}" min="0">
+                    </div>
+                    <div class="col-md-6">
+                        <label for="departamento" class="form-label">Departamento</label>
+                        <select class="form-select" id="departamento" name="departamento" required>
+                            <option value="">Seleccione un departamento</option>
+                            {% for dept in form.fields.departamento.queryset %}
+                                <option value="{{ dept.id }}" {% if form.departamento.value == dept.id %}selected{% endif %}>{{ dept.nombre }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="ubicacion" class="form-label">Ubicación</label>
+                        <input type="text" class="form-control" id="ubicacion" name="ubicacion" value="{{ form.ubicacion.value|default:'' }}" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="estado" class="form-label">Estado</label>
+                        <select class="form-select" id="estado" name="estado" required>
+                            <option value="disponible" {% if form.estado.value == 'disponible' %}selected{% endif %}>Disponible</option>
+                            <option value="mantenimiento" {% if form.estado.value == 'mantenimiento' %}selected{% endif %}>En Mantenimiento</option>
+                            <option value="ocupado" {% if form.estado.value == 'ocupado' %}selected{% endif %}>Ocupado</option>
+                            <option value="fuera_servicio" {% if form.estado.value == 'fuera_servicio' %}selected{% endif %}>Fuera de Servicio</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="descripcion" class="form-label">Descripción</label>
+                    <textarea class="form-control" id="descripcion" name="descripcion" rows="3">{{ form.descripcion.value|default:'' }}</textarea>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="notas" class="form-label">Notas</label>
+                    <textarea class="form-control" id="notas" name="notas" rows="2">{{ form.notas.value|default:'' }}</textarea>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="imagen" class="form-label">Imagen</label>
+                    <input type="file" class="form-control" id="imagen" name="imagen">
+                    {% if local.imagen %}
+                        <div class="mt-2">
+                            <img src="{{ local.imagen.url }}" alt="{{ local.nombre }}" class="img-thumbnail" style="max-height: 100px;">
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                    <a href="{% url 'local_list' %}" class="btn btn-secondary me-md-2">Cancelar</a>
+                    <button type="submit" class="btn btn-primary">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

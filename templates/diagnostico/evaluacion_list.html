@@ -1,0 +1,96 @@
+{% extends 'base/base.html' %}
+
+{% block title %}Evaluaciones - UCF{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Evaluaciones de Transformación Digital</h1>
+        <a href="{% url 'evaluacion_new' %}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Nueva Evaluación
+        </a>
+    </div>
+    
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex flex-wrap justify-content-between align-items-center">
+            <h6 class="m-0 font-weight-bold">Listado de Evaluaciones</h6>
+            <form method="get" class="d-flex mt-2 mt-md-0">
+                <div class="input-group">
+                    <input type="text" class="form-control" placeholder="Buscar..." name="search" value="{{ search }}">
+                    <select class="form-select" name="departamento" style="max-width: 200px;">
+                        <option value="">Todos los departamentos</option>
+                        {% for dept in departamentos %}
+                            <option value="{{ dept.id }}" {% if departamento == dept.id|stringformat:"i" %}selected{% endif %}>{{ dept.nombre }}</option>
+                        {% endfor %}
+                    </select>
+                    <button class="btn btn-outline-light" type="submit">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+            </form>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover" width="100%" cellspacing="0">
+                    <thead>
+                        <tr>
+                            <th>Departamento</th>
+                            <th>Fecha</th>
+                            <th>Cuestionario</th>
+                            <th>Nivel General</th>
+                            <th>Responsable</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if diagnosticos %}
+                            {% for diagnostico in diagnosticos %}
+                                <tr>
+                                    <td>{{ diagnostico.departamento.nombre }}</td>
+                                    <td>{{ diagnostico.fecha|date:"d/m/Y H:i" }}</td>
+                                    <td>{{ diagnostico.cuestionario.titulo }}</td>
+                                    <td>
+                                        {% if diagnostico.nivel_general %}
+                                            {% if diagnostico.nivel_general < 2 %}
+                                                <span class="badge bg-danger">{{ diagnostico.nivel_general|floatformat:1 }} / 5</span>
+                                            {% elif diagnostico.nivel_general < 3 %}
+                                                <span class="badge bg-warning">{{ diagnostico.nivel_general|floatformat:1 }} / 5</span>
+                                            {% elif diagnostico.nivel_general < 4 %}
+                                                <span class="badge bg-info">{{ diagnostico.nivel_general|floatformat:1 }} / 5</span>
+                                            {% else %}
+                                                <span class="badge bg-success">{{ diagnostico.nivel_general|floatformat:1 }} / 5</span>
+                                            {% endif %}
+                                        {% else %}
+                                            <span class="text-muted">No evaluado</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ diagnostico.responsable.get_full_name }}</td>
+                                    <td>
+                                        <a href="{% url 'evaluacion_detail' pk=diagnostico.id %}" class="btn btn-sm btn-info">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        <a href="{% url 'evaluacion_respuestas' pk=diagnostico.id %}" class="btn btn-sm btn-primary">
+                                            <i class="fas fa-clipboard-check"></i>
+                                        </a>
+                                        <a href="{% url 'evaluacion_edit' pk=diagnostico.id %}" class="btn btn-sm btn-warning">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="6" class="text-center">No hay evaluaciones disponibles</td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+{% endblock %}

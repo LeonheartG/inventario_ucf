@@ -1,0 +1,244 @@
+{% extends 'base/base.html' %}
+
+{% block title %}Resultado de Reporte de Transformación Digital - UCF{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col-lg-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h1>Reporte de Transformación Digital</h1>
+                <div>
+                    <button onclick="window.print()" class="btn btn-outline-secondary me-2">
+                        <i class="fas fa-print"></i> Imprimir
+                    </button>
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-outline-primary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-download"></i> Exportar
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="{% url 'export_diagnostico' format='pdf' %}?{{ request.GET.urlencode }}">PDF</a></li>
+                            <li><a class="dropdown-item" href="{% url 'export_diagnostico' format='csv' %}?{{ request.GET.urlencode }}">CSV</a></li>
+                            <li><a class="dropdown-item" href="{% url 'export_diagnostico' format='excel' %}?{{ request.GET.urlencode }}">Excel</a></li>
+                        </ul>
+                    </div>
+                    <a href="{% url 'transformacion_digital_report' %}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> Volver
+                    </a>
+                </div>
+            </div>
+            <hr>
+        </div>
+    </div>
+    
+    <div class="row mb-3">
+        <div class="col-lg-12">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold">Filtros Aplicados</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <p><strong>Departamento:</strong> 
+                                {% if form.departamento.value %}
+                                    {% for dept in form.fields.departamento.queryset %}
+                                        {% if form.departamento.value == dept.id|stringformat:"i" %}
+                                            {{ dept.nombre }}
+                                        {% endif %}
+                                    {% endfor %}
+                                {% else %}
+                                    Todos
+                                {% endif %}
+                            </p>
+                        </div>
+                        <div class="col-md-4">
+                            <p><strong>Fecha desde:</strong> {{ form.fecha_inicio.value|default:"No especificada" }}</p>
+                        </div>
+                        <div class="col-md-4">
+                            <p><strong>Fecha hasta:</strong> {{ form.fecha_fin.value|default:"No especificada" }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold">Resultados Generales</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <div class="card border-left-primary shadow h-100 py-2">
+                                <div class="card-body">
+                                    <div class="row no-gutters align-items-center">
+                                        <div class="col mr-2">
+                                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                                Nivel General de Transformación Digital</div>
+                                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                                {% if nivel_general %}
+                                                    {{ nivel_general|floatformat:2 }} / 5
+                                                    {% if nivel_general < 2 %}
+                                                        <span class="badge bg-danger">Bajo</span>
+                                                    {% elif nivel_general < 3 %}
+                                                        <span class="badge bg-warning">Medio-Bajo</span>
+                                                    {% elif nivel_general < 4 %}
+                                                        <span class="badge bg-info">Medio-Alto</span>
+                                                    {% else %}
+                                                        <span class="badge bg-success">Alto</span>
+                                                    {% endif %}
+                                                {% else %}
+                                                    No hay datos suficientes
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                        <div class="col-auto">
+                                            <i class="fas fa-digital-tachograph fa-2x text-gray-300"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card border-left-info shadow h-100 py-2">
+                                <div class="card-body">
+                                    <div class="row no-gutters align-items-center">
+                                        <div class="col mr-2">
+                                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                                Total de Evaluaciones</div>
+                                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ diagnosticos|length }}</div>
+                                        </div>
+                                        <div class="col-auto">
+                                            <i class="fas fa-clipboard-list fa-2x text-gray-300"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {% if indicadores_por_departamento %}
+                        <div class="table-responsive">
+                            <table class="table table-bordered">
+                                <thead>
+                                    <tr>
+                                        <th>Departamento</th>
+                                        <th>Nivel de Transformación Digital</th>
+                                        <th>Estado</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for indicador in indicadores_por_departamento %}
+                                        <tr>
+                                            <td>{{ indicador.departamento }}</td>
+                                            <td>{{ indicador.nivel|floatformat:2 }} / 5</td>
+                                            <td>
+                                                {% if indicador.nivel < 2 %}
+                                                    <span class="badge bg-danger">Bajo</span>
+                                                {% elif indicador.nivel < 3 %}
+                                                    <span class="badge bg-warning">Medio-Bajo</span>
+                                                {% elif indicador.nivel < 4 %}
+                                                    <span class="badge bg-info">Medio-Alto</span>
+                                                {% else %}
+                                                    <span class="badge bg-success">Alto</span>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-info">
+                            No hay datos de indicadores por departamento disponibles.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold">Evaluaciones Realizadas</h6>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-hover" id="dataTable" width="100%" cellspacing="0">
+                            <thead>
+                                <tr>
+                                    <th>Departamento</th>
+                                    <th>Fecha</th>
+                                    <th>Cuestionario</th>
+                                    <th>Nivel</th>
+                                    <th>Responsable</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% if diagnosticos %}
+                                    {% for diagnostico in diagnosticos %}
+                                        <tr>
+                                            <td>{{ diagnostico.departamento.nombre }}</td>
+                                            <td>{{ diagnostico.fecha|date:"d/m/Y H:i" }}</td>
+                                            <td>{{ diagnostico.cuestionario.titulo }}</td>
+                                            <td>
+                                                {% if diagnostico.nivel_general %}
+                                                    {% if diagnostico.nivel_general < 2 %}
+                                                        <span class="badge bg-danger">{{ diagnostico.nivel_general|floatformat:2 }}</span>
+                                                    {% elif diagnostico.nivel_general < 3 %}
+                                                        <span class="badge bg-warning">{{ diagnostico.nivel_general|floatformat:2 }}</span>
+                                                    {% elif diagnostico.nivel_general < 4 %}
+                                                        <span class="badge bg-info">{{ diagnostico.nivel_general|floatformat:2 }}</span>
+                                                    {% else %}
+                                                        <span class="badge bg-success">{{ diagnostico.nivel_general|floatformat:2 }}</span>
+                                                    {% endif %}
+                                                {% else %}
+                                                    <span class="text-muted">No evaluado</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>{{ diagnostico.responsable.get_full_name }}</td>
+                                        </tr>
+                                    {% endfor %}
+                                {% else %}
+                                    <tr>
+                                        <td colspan="5" class="text-center">No hay evaluaciones disponibles con los filtros seleccionados</td>
+                                    </tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold">Recomendaciones Generales</h6>
+                </div>
+                <div class="card-body">
+                    {% if nivel_general %}
+                        <div class="alert 
+                            {% if nivel_general < 2 %}alert-danger
+                            {% elif nivel_general < 3 %}alert-warning
+                            {% elif nivel_general < 4 %}alert-info
+                            {% else %}alert-success{% endif %}">
+                            <h5 class="alert-heading">Nivel de Transformación Digital: {{ nivel_general|floatformat:2 }} / 5</h5>
+                            
+                            {% if nivel_general < 2 %}
+                                <p>La institución se encuentra en un <strong>nivel básico</strong> de transformación digital. Es necesario implementar acciones inmediatas para mejorar la incorporación de tecnologías en los procesos académicos y administrativos.</p>
+                                <hr>
+                                <p>Recomendaciones:</p>
+                                <ul>
+                                    <li>Desarrollar un plan estratégico de transformación digital.</li>
+                                    <li>Actualizar la infraestructura tecnológica básica.</li>
+                                    <li>Capacitar al personal en competencias digitales básicas.</li>
+                                    <li>Implementar herramienta

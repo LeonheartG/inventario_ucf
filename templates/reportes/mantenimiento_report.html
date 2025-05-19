@@ -1,0 +1,113 @@
+{% extends 'base/base.html' %}
+
+{% block title %}Reporte de Mantenimientos - UCF{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col-lg-12">
+            <h1>Reporte de Mantenimientos</h1>
+            <hr>
+        </div>
+    </div>
+    
+    <div class="row mb-4">
+        <div class="col-lg-12">
+            <div class="card shadow">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold">Filtros</h6>
+                </div>
+                <div class="card-body">
+                    <form method="get" class="row g-3">
+                        <div class="col-md-3">
+                            <label for="tipo" class="form-label">Tipo</label>
+                            <select class="form-select" id="tipo" name="tipo">
+                                <option value="">Todos</option>
+                                <option value="preventivo" {% if form.tipo.value == 'preventivo' %}selected{% endif %}>Preventivo</option>
+                                <option value="correctivo" {% if form.tipo.value == 'correctivo' %}selected{% endif %}>Correctivo</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="estado" class="form-label">Estado</label>
+                            <select class="form-select" id="estado" name="estado">
+                                <option value="">Todos</option>
+                                <option value="programado" {% if form.estado.value == 'programado' %}selected{% endif %}>Programado</option>
+                                <option value="en_proceso" {% if form.estado.value == 'en_proceso' %}selected{% endif %}>En Proceso</option>
+                                <option value="completado" {% if form.estado.value == 'completado' %}selected{% endif %}>Completado</option>
+                                <option value="cancelado" {% if form.estado.value == 'cancelado' %}selected{% endif %}>Cancelado</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="responsable" class="form-label">Responsable</label>
+                            <select class="form-select" id="responsable" name="responsable">
+                                <option value="">Todos</option>
+                                {% for usuario in form.fields.responsable.queryset %}
+                                    <option value="{{ usuario.id }}" {% if form.responsable.value == usuario.id %}selected{% endif %}>
+                                        {{ usuario.get_full_name|default:usuario.username }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="formato" class="form-label">Formato</label>
+                            <select class="form-select" id="formato" name="formato">
+                                <option value="html" {% if form.formato.value == 'html' %}selected{% endif %}>HTML</option>
+                                <option value="pdf" {% if form.formato.value == 'pdf' %}selected{% endif %}>PDF</option>
+                                <option value="csv" {% if form.formato.value == 'csv' %}selected{% endif %}>CSV</option>
+                                <option value="excel" {% if form.formato.value == 'excel' %}selected{% endif %}>Excel</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="fecha_inicio" class="form-label">Fecha programada desde</label>
+                            <input type="date" class="form-control" id="fecha_inicio" name="fecha_inicio" value="{{ form.fecha_inicio.value|date:'Y-m-d'|default:'' }}">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="fecha_fin" class="form-label">Fecha programada hasta</label>
+                            <input type="date" class="form-control" id="fecha_fin" name="fecha_fin" value="{{ form.fecha_fin.value|date:'Y-m-d'|default:'' }}">
+                        </div>
+                        <div class="col-12 mt-3 text-end">
+                            <button type="submit" class="btn btn-primary">Generar Reporte</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row mb-4">
+        <div class="col-lg-12">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold">Otros Reportes</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <div class="card h-100">
+                                <div class="card-body text-center">
+                                    <h5 class="card-title">Reporte de Inventario</h5>
+                                    <p class="card-text">Detalles completos del inventario de activos.</p>
+                                    <a href="{% url 'inventario_report' %}" class="btn btn-primary">Generar</a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="card h-100">
+                                <div class="card-body text-center">
+                                    <h5 class="card-title">Reporte de Obsolescencia</h5>
+                                    <p class="card-text">Activos obsoletos o próximos a serlo.</p>
+                                    <a href="{% url 'obsolescencia_report' %}" class="btn btn-primary">Generar</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+{% endblock %}

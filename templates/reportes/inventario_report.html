@@ -1,0 +1,122 @@
+{% extends 'base/base.html' %}
+
+{% block title %}Reporte de Inventario - UCF{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col-lg-12">
+            <h1>Reporte de Inventario</h1>
+            <hr>
+        </div>
+    </div>
+    
+    <div class="row mb-4">
+        <div class="col-lg-12">
+            <div class="card shadow">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold">Filtros</h6>
+                </div>
+                <div class="card-body">
+                    <form method="get" class="row g-3">
+                        <div class="col-md-3">
+                            <label for="tipo" class="form-label">Tipo</label>
+                            <select class="form-select" id="tipo" name="tipo">
+                                <option value="">Todos</option>
+                                <option value="hardware" {% if form.tipo.value == 'hardware' %}selected{% endif %}>Hardware</option>
+                                <option value="software" {% if form.tipo.value == 'software' %}selected{% endif %}>Software</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="departamento" class="form-label">Departamento</label>
+                            <select class="form-select" id="departamento" name="departamento">
+                                <option value="">Todos</option>
+                                {% for dept in form.fields.departamento.queryset %}
+                                    <option value="{{ dept.id }}" {% if form.departamento.value == dept.id %}selected{% endif %}>
+                                        {{ dept.nombre }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="estado" class="form-label">Estado</label>
+                            <select class="form-select" id="estado" name="estado">
+                                <option value="">Todos</option>
+                                <option value="activo" {% if form.estado.value == 'activo' %}selected{% endif %}>Activo</option>
+                                <option value="en_mantenimiento" {% if form.estado.value == 'en_mantenimiento' %}selected{% endif %}>En Mantenimiento</option>
+                                <option value="obsoleto" {% if form.estado.value == 'obsoleto' %}selected{% endif %}>Obsoleto</option>
+                                <option value="baja" {% if form.estado.value == 'baja' %}selected{% endif %}>De Baja</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="formato" class="form-label">Formato</label>
+                            <select class="form-select" id="formato" name="formato">
+                                <option value="html" {% if form.formato.value == 'html' %}selected{% endif %}>HTML</option>
+                                <option value="pdf" {% if form.formato.value == 'pdf' %}selected{% endif %}>PDF</option>
+                                <option value="csv" {% if form.formato.value == 'csv' %}selected{% endif %}>CSV</option>
+                                <option value="excel" {% if form.formato.value == 'excel' %}selected{% endif %}>Excel</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="fecha_inicio" class="form-label">Fecha de adquisición desde</label>
+                            <input type="date" class="form-control" id="fecha_inicio" name="fecha_inicio" value="{{ form.fecha_inicio.value|date:'Y-m-d'|default:'' }}">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="fecha_fin" class="form-label">Fecha de adquisición hasta</label>
+                            <input type="date" class="form-control" id="fecha_fin" name="fecha_fin" value="{{ form.fecha_fin.value|date:'Y-m-d'|default:'' }}">
+                        </div>
+                        <div class="col-12 mt-3 text-end">
+                            <button type="submit" class="btn btn-primary">Generar Reporte</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row mb-4">
+        <div class="col-lg-12">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold">Otros Tipos de Reportes</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <div class="card h-100">
+                                <div class="card-body text-center">
+                                    <h5 class="card-title">Reporte por Categoría</h5>
+                                    <p class="card-text">Distribución de activos por tipo y categoría.</p>
+                                    <a href="{% url 'inventario_categoria_report' %}" class="btn btn-primary">Generar</a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <div class="card h-100">
+                                <div class="card-body text-center">
+                                    <h5 class="card-title">Reporte por Ubicación</h5>
+                                    <p class="card-text">Distribución de activos por ubicación y departamento.</p>
+                                    <a href="{% url 'inventario_ubicacion_report' %}" class="btn btn-primary">Generar</a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <div class="card h-100">
+                                <div class="card-body text-center">
+                                    <h5 class="card-title">Reporte de Obsolescencia</h5>
+                                    <p class="card-text">Activos obsoletos o próximos a serlo.</p>
+                                    <a href="{% url 'obsolescencia_report' %}" class="btn btn-primary">Generar</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+{% endblock %}

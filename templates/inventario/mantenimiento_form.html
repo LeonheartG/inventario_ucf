@@ -1,0 +1,99 @@
+{% extends 'base/base.html' %}
+
+{% block title %}{% if is_new %}Registrar Mantenimiento{% else %}Editar Mantenimiento{% endif %} - UCF{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold">{% if is_new %}Registrar Nuevo Mantenimiento{% else %}Editar Mantenimiento{% endif %}</h6>
+        </div>
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+                
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="activo" class="form-label">Activo</label>
+                        <select class="form-select" id="activo" name="activo" required>
+                            <option value="">Seleccione un activo</option>
+                            {% for activo in activos %}
+                                <option value="{{ activo.id }}" {% if form.activo.value == activo.id %}selected{% endif %}>
+                                    {{ activo.nombre }} ({{ activo.get_tipo_display }})
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="tipo" class="form-label">Tipo de Mantenimiento</label>
+                        <select class="form-select" id="tipo" name="tipo" required>
+                            <option value="">Seleccione un tipo</option>
+                            <option value="preventivo" {% if form.tipo.value == 'preventivo' %}selected{% endif %}>Preventivo</option>
+                            <option value="correctivo" {% if form.tipo.value == 'correctivo' %}selected{% endif %}>Correctivo</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="fecha_programada" class="form-label">Fecha Programada</label>
+                        <input type="date" class="form-control" id="fecha_programada" name="fecha_programada" value="{{ form.fecha_programada.value|date:'Y-m-d'|default:'' }}" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="fecha_realizacion" class="form-label">Fecha de Realización</label>
+                        <input type="date" class="form-control" id="fecha_realizacion" name="fecha_realizacion" value="{{ form.fecha_realizacion.value|date:'Y-m-d'|default:'' }}">
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="responsable" class="form-label">Responsable</label>
+                        <select class="form-select" id="responsable" name="responsable" required>
+                            <option value="">Seleccione un responsable</option>
+                            {% for user in usuarios %}
+                                <option value="{{ user.id }}" {% if form.responsable.value == user.id %}selected{% endif %}>
+                                    {{ user.get_full_name|default:user.username }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="estado" class="form-label">Estado</label>
+                        <select class="form-select" id="estado" name="estado" required>
+                            <option value="programado" {% if form.estado.value == 'programado' %}selected{% endif %}>Programado</option>
+                            <option value="en_proceso" {% if form.estado.value == 'en_proceso' %}selected{% endif %}>En Proceso</option>
+                            <option value="completado" {% if form.estado.value == 'completado' %}selected{% endif %}>Completado</option>
+                            <option value="cancelado" {% if form.estado.value == 'cancelado' %}selected{% endif %}>Cancelado</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="descripcion" class="form-label">Descripción</label>
+                    <textarea class="form-control" id="descripcion" name="descripcion" rows="3" required>{{ form.descripcion.value|default:'' }}</textarea>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="costo" class="form-label">Costo</label>
+                        <div class="input-group">
+                            <span class="input-group-text">$</span>
+                            <input type="number" step="0.01" class="form-control" id="costo" name="costo" value="{{ form.costo.value|default:'' }}">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="observaciones" class="form-label">Observaciones</label>
+                    <textarea class="form-control" id="observaciones" name="observaciones" rows="3">{{ form.observaciones.value|default:'' }}</textarea>
+                </div>
+                
+                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                    <a href="{% url 'mantenimiento_list' %}" class="btn btn-secondary me-md-2">Cancelar</a>
+                    <button type="submit" class="btn btn-primary">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

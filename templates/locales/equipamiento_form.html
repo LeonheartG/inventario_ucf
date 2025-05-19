@@ -1,0 +1,70 @@
+{% extends 'base/base.html' %}
+
+{% block title %}{% if is_new %}Asignar Equipamiento{% else %}Editar Equipamiento{% endif %} - UCF{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold">{% if is_new %}Asignar Equipamiento a Local{% else %}Editar Asignación de Equipamiento{% endif %}</h6>
+        </div>
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+                
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="local" class="form-label">Local</label>
+                        <select class="form-select" id="local" name="local" required {% if not is_new %}disabled{% endif %}>
+                            <option value="">Seleccione un local</option>
+                            {% for loc in form.fields.local.queryset %}
+                                <option value="{{ loc.id }}" {% if form.local.value == loc.id %}selected{% endif %}>
+                                    {{ loc.nombre }} ({{ loc.get_tipo_display }})
+                                </option>
+                            {% endfor %}
+                        </select>
+                        {% if not is_new %}
+                            <input type="hidden" name="local" value="{{ form.local.value }}">
+                        {% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        <label for="hardware" class="form-label">Hardware</label>
+                        <select class="form-select" id="hardware" name="hardware" required {% if not is_new %}disabled{% endif %}>
+                            <option value="">Seleccione un hardware</option>
+                            {% for hw in form.fields.hardware.queryset %}
+                                <option value="{{ hw.activo_id }}" {% if form.hardware.value == hw.activo_id %}selected{% endif %}>
+                                    {{ hw.activo.nombre }} ({{ hw.marca }} {{ hw.modelo }})
+                                </option>
+                            {% endfor %}
+                        </select>
+                        {% if not is_new %}
+                            <input type="hidden" name="hardware" value="{{ form.hardware.value }}">
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="estado" class="form-label">Estado</label>
+                        <select class="form-select" id="estado" name="estado" required>
+                            <option value="operativo" {% if form.estado.value == 'operativo' %}selected{% endif %}>Operativo</option>
+                            <option value="defectuoso" {% if form.estado.value == 'defectuoso' %}selected{% endif %}>Defectuoso</option>
+                            <option value="mantenimiento" {% if form.estado.value == 'mantenimiento' %}selected{% endif %}>En Mantenimiento</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="notas" class="form-label">Notas</label>
+                    <textarea class="form-control" id="notas" name="notas" rows="3">{{ form.notas.value|default:'' }}</textarea>
+                </div>
+                
+                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                    <a href="{% url 'equipamiento_list' %}" class="btn btn-secondary me-md-2">Cancelar</a>
+                    <button type="submit" class="btn btn-primary">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

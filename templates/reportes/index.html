@@ -1,0 +1,59 @@
+{% extends 'base/base.html' %}
+
+{% block title %}Reportes - UCF{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col-lg-12">
+            <h1 class="display-4">Reportes</h1>
+            <p class="lead">Genere reportes personalizados del sistema.</p>
+            <hr class="my-4">
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-4 mb-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Inventario</h5>
+                    <p class="card-text">Reportes generales de inventario.</p>
+                    <a href="{% url 'inventario_report' %}" class="btn btn-primary">Generar</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Mantenimiento</h5>
+                    <p class="card-text">Reportes de mantenimientos realizados y programados.</p>
+                    <a href="{% url 'mantenimiento_report' %}" class="btn btn-primary">Generar</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Transformación Digital</h5>
+                    <p class="card-text">Reportes de diagnóstico de transformación digital.</p>
+                    <a href="{% url 'transformacion_digital_report' %}" class="btn btn-primary">Generar</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row mt-4">
+        <div class="col-lg-12">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Dashboard</h6>
+                </div>
+                <div class="card-body">
+                    <p>Acceda al dashboard para visualizar gráficos y resúmenes.</p>
+                    <a href="{% url 'reportes_dashboard' %}" class="btn btn-primary">Ver Dashboard</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,61 @@
+{% extends 'base/base.html' %}
+
+{% block title %}{% if is_new %}Nueva Evaluación{% else %}Editar Evaluación{% endif %} - UCF{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold">{% if is_new %}Nueva Evaluación de Transformación Digital{% else %}Editar Evaluación{% endif %}</h6>
+        </div>
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+                
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="departamento" class="form-label">Departamento</label>
+                        <select class="form-select" id="departamento" name="departamento" required>
+                            <option value="">Seleccione un departamento</option>
+                            {% for dept in form.fields.departamento.queryset %}
+                                <option value="{{ dept.id }}" {% if form.departamento.value == dept.id %}selected{% endif %}>
+                                    {{ dept.nombre }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="cuestionario" class="form-label">Cuestionario</label>
+                        <select class="form-select" id="cuestionario" name="cuestionario" required>
+                            <option value="">Seleccione un cuestionario</option>
+                            {% for cuest in form.fields.cuestionario.queryset %}
+                                <option value="{{ cuest.id }}" {% if form.cuestionario.value == cuest.id %}selected{% endif %}>
+                                    {{ cuest.titulo }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="observaciones" class="form-label">Observaciones</label>
+                    <textarea class="form-control" id="observaciones" name="observaciones" rows="3">{{ form.observaciones.value|default:'' }}</textarea>
+                </div>
+                
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i> Después de guardar esta información básica, podrá proceder a responder las preguntas del cuestionario.
+                </div>
+                
+                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                    <a href="{% url 'evaluacion_list' %}" class="btn btn-secondary me-md-2">Cancelar</a>
+                    <button type="submit" class="btn btn-primary">Continuar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+{% endblock %}

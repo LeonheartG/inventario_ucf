@@ -1,0 +1,45 @@
+{% extends 'base/base.html' %}
+
+{% block title %}Gestión de Usuarios - UCF{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col-lg-12">
+            <h1 class="display-4">Gestión de Usuarios</h1>
+            <p class="lead">Bienvenido al módulo de gestión de usuarios del Sistema Integral para la Gestión de Inventarios Tecnológicos.</p>
+            <hr class="my-4">
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-4 mb-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Perfiles de Usuario</h5>
+                    <p class="card-text">Administre los perfiles de usuario del sistema.</p>
+                    <a href="{% url 'perfil' %}" class="btn btn-primary">Administrar</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Departamentos</h5>
+                    <p class="card-text">Gestione los departamentos y sus responsables.</p>
+                    <a href="#" class="btn btn-primary">Administrar</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Roles y Permisos</h5>
+                    <p class="card-text">Configure los roles y permisos de acceso al sistema.</p>
+                    <a href="#" class="btn btn-primary">Administrar</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

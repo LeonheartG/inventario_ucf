@@ -1,0 +1,81 @@
+{% extends 'base/base.html' %}
+
+{% block title %}Indicadores - UCF{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Indicadores de Transformación Digital</h1>
+    </div>
+    
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex flex-wrap justify-content-between align-items-center">
+            <h6 class="m-0 font-weight-bold">Listado de Indicadores</h6>
+            <form method="get" class="d-flex mt-2 mt-md-0">
+                <div class="input-group">
+                    <input type="text" class="form-control" placeholder="Buscar..." name="search" value="{{ search }}">
+                    <select class="form-select" name="departamento" style="max-width: 200px;">
+                        <option value="">Todos los departamentos</option>
+                        {% for dept in departamentos %}
+                            <option value="{{ dept.id }}" {% if departamento == dept.id|stringformat:"i" %}selected{% endif %}>{{ dept.nombre }}</option>
+                        {% endfor %}
+                    </select>
+                    <button class="btn btn-outline-light" type="submit">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+            </form>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover" width="100%" cellspacing="0">
+                    <thead>
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Departamento</th>
+                            <th>Fecha Evaluación</th>
+                            <th>Valor</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if indicadores %}
+                            {% for indicador in indicadores %}
+                                <tr>
+                                    <td>{{ indicador.nombre }}</td>
+                                    <td>{{ indicador.diagnostico.departamento.nombre }}</td>
+                                    <td>{{ indicador.diagnostico.fecha|date:"d/m/Y" }}</td>
+                                    <td>
+                                        {% if indicador.valor < 2 %}
+                                            <span class="badge bg-danger">{{ indicador.valor|floatformat:1 }} (Bajo)</span>
+                                        {% elif indicador.valor < 3 %}
+                                            <span class="badge bg-warning">{{ indicador.valor|floatformat:1 }} (Medio-Bajo)</span>
+                                        {% elif indicador.valor < 4 %}
+                                            <span class="badge bg-info">{{ indicador.valor|floatformat:1 }} (Medio-Alto)</span>
+                                        {% else %}
+                                            <span class="badge bg-success">{{ indicador.valor|floatformat:1 }} (Alto)</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <a href="{% url 'indicador_detail' pk=indicador.id %}" class="btn btn-sm btn-info">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="5" class="text-center">No hay indicadores disponibles</td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+{% endblock %}

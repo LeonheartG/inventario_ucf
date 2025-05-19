@@ -1,0 +1,56 @@
+{% extends 'base/base.html' %}
+
+{% block title %}Registro - UCF{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-lg-6 col-md-8">
+            <div class="card shadow-lg mt-4">
+                <div class="card-header bg-primary text-white text-center py-3">
+                    <h3 class="mb-0">Registro de Usuario</h3>
+                </div>
+                <div class="card-body p-4">
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="first_name" class="form-label">Nombre</label>
+                                <input type="text" class="form-control" id="first_name" name="first_name" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="last_name" class="form-label">Apellidos</label>
+                                <input type="text" class="form-control" id="last_name" name="last_name" required>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="username" class="form-label">Nombre de usuario</label>
+                            <input type="text" class="form-control" id="username" name="username" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="email" class="form-label">Correo electrónico</label>
+                            <input type="email" class="form-control" id="email" name="email" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="password1" class="form-label">Contraseña</label>
+                            <input type="password" class="form-control" id="password1" name="password1" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="password2" class="form-label">Confirmar contraseña</label>
+                            <input type="password" class="form-control" id="password2" name="password2" required>
+                        </div>
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary">Registrarse</button>
+                        </div>
+                    </form>
+                </div>
+                <div class="card-footer text-center bg-light py-3">
+                    <div class="small">
+                        <a href="{% url 'login' %}">¿Ya tiene una cuenta? ¡Inicie sesión!</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

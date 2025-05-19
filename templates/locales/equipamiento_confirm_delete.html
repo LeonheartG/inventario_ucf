@@ -1,0 +1,42 @@
+{% extends 'base/base.html' %}
+
+{% block title %}Eliminar Asignación de Equipamiento - UCF{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-lg-6">
+            <div class="card shadow mt-5">
+                <div class="card-header py-3 bg-danger">
+                    <h6 class="m-0 font-weight-bold text-white">Confirmar Eliminación</h6>
+                </div>
+                <div class="card-body text-center p-5">
+                    <div class="mb-4">
+                        <i class="fas fa-exclamation-triangle text-warning fa-3x mb-3"></i>
+                        <h5>¿Está seguro que desea eliminar esta asignación de equipamiento?</h5>
+                        <p class="mb-0">Hardware: {{ equipamiento.hardware.activo.nombre }}</p>
+                        <p class="mb-0">Local: {{ equipamiento.local.nombre }}</p>
+                        <p class="text-muted small">Esta acción no se puede deshacer. El hardware quedará disponible para asignar a otro local.</p>
+                    </div>
+                    
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-center">
+                            <a href="{% url 'equipamiento_detail' pk=equipamiento.id %}" class="btn btn-secondary me-md-2">
+                                Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-danger">
+                                Confirmar Eliminación
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+{% endblock %}

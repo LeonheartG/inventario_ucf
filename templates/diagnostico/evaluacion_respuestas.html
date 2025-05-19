@@ -1,0 +1,89 @@
+{% extends 'base/base.html' %}
+
+{% block title %}Responder Evaluación - UCF{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold">Responder Evaluación</h6>
+        </div>
+        <div class="card-body">
+            <div class="mb-4">
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong>Departamento:</strong> {{ diagnostico.departamento.nombre }}</p>
+                        <p><strong>Cuestionario:</strong> {{ diagnostico.cuestionario.titulo }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>Fecha:</strong> {{ diagnostico.fecha|date:"d/m/Y H:i" }}</p>
+                        <p><strong>Responsable:</strong> {{ diagnostico.responsable.get_full_name }}</p>
+                    </div>
+                </div>
+            </div>
+            
+            <form method="post">
+                {% csrf_token %}
+                
+                <div class="list-group mb-4">
+                    {% for pregunta, form in forms %}
+                        <div class="list-group-item p-4">
+                            <div class="row mb-2">
+                                <div class="col-12">
+                                    <span class="badge {% if pregunta.tipo == 'escala' %}bg-primary{% elif pregunta.tipo == 'si_no' %}bg-success{% else %}bg-info{% endif %} mb-2">
+                                        {{ pregunta.get_tipo_display }}
+                                    </span>
+                                    <h5>{{ pregunta.texto }}</h5>
+                                    <p class="text-muted small">Categoría: {{ pregunta.categoria }}</p>
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-12">
+                                    {% if pregunta.tipo == 'escala' %}
+                                        <div class="d-flex justify-content-between mb-2">
+                                            <span>Bajo</span>
+                                            <span>Alto</span>
+                                        </div>
+                                        <div class="btn-group w-100" role="group">
+                                            {% for radio in form.valor_numerico %}
+                                                <label class="btn btn-outline-primary p-3 flex-grow-1">
+                                                    {{ radio.tag }}
+                                                    <span class="d-block">{{ radio.choice_label }}</span>
+                                                </label>
+                                            {% endfor %}
+                                        </div>
+                                    {% elif pregunta.tipo == 'si_no' %}
+                                        <div class="btn-group" role="group">
+                                            {% for radio in form.valor_numerico %}
+                                                <label class="btn btn-outline-success me-3 p-3">
+                                                    {{ radio.tag }}
+                                                    <span class="ms-1">{{ radio.choice_label }}</span>
+                                                </label>
+                                            {% endfor %}
+                                        </div>
+                                    {% else %} <!-- tipo 'texto' -->
+                                        {{ form.valor_texto }}
+                                    {% endif %}
+                                    
+                                    {{ form.valor_numerico.errors }}
+                                    {{ form.valor_texto.errors }}
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+                
+                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                    <a href="{% url 'evaluacion_list' %}" class="btn btn-secondary me-md-2">Cancelar</a>
+                    <button type="submit" class="btn btn-primary">Guardar Respuestas</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+{% endblock %}

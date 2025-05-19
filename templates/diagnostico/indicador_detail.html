@@ -1,0 +1,141 @@
+{% extends 'base/base.html' %}
+
+{% block title %}Detalle de Indicador - UCF{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>{{ indicador.nombre }}</h1>
+        <div>
+            <a href="{% url 'evaluacion_detail' pk=indicador.diagnostico.id %}" class="btn btn-info">
+                <i class="fas fa-clipboard-list"></i> Ver Evaluación
+            </a>
+            <a href="{% url 'indicador_list' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Volver
+            </a>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-lg-6">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold">Información del Indicador</h6>
+                </div>
+                <div class="card-body">
+                    <table class="table table-striped">
+                        <tr>
+                            <th>Nombre:</th>
+                            <td>{{ indicador.nombre }}</td>
+                        </tr>
+                        <tr>
+                            <th>Valor:</th>
+                            <td>
+                                <span class="badge 
+                                    {% if indicador.valor < 2 %}bg-danger
+                                    {% elif indicador.valor < 3 %}bg-warning
+                                    {% elif indicador.valor < 4 %}bg-info
+                                    {% else %}bg-success{% endif %}"
+                                    style="font-size: 1rem;">
+                                    {{ indicador.valor|floatformat:1 }} / 5
+                                </span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>Departamento:</th>
+                            <td>{{ indicador.diagnostico.departamento.nombre }}</td>
+                        </tr>
+                        <tr>
+                            <th>Fecha de Evaluación:</th>
+                            <td>{{ indicador.diagnostico.fecha|date:"d/m/Y H:i" }}</td>
+                        </tr>
+                        <tr>
+                            <th>Cuestionario:</th>
+                            <td>{{ indicador.diagnostico.cuestionario.titulo }}</td>
+                        </tr>
+                    </table>
+                    
+                    <div class="mt-4">
+                        <h6>Nivel de Madurez</h6>
+                        <div class="d-flex justify-content-between text-muted small mb-2">
+                            <span>1 - Bajo</span>
+                            <span>2 - Medio-Bajo</span>
+                            <span>3 - Medio</span>
+                            <span>4 - Medio-Alto</span>
+                            <span>5 - Alto</span>
+                        </div>
+                        <div class="d-flex">
+                            {% if indicador.valor < 2 %}
+                                <div class="p-2 bg-danger text-white text-center" style="flex: 0 0 20%;">
+                                    <span>{{ indicador.valor|floatformat:1 }}</span>
+                                </div>
+                                <div class="p-2 bg-light" style="flex: 0 0 80%;">
+                                    &nbsp;
+                                </div>
+                            {% elif indicador.valor < 3 %}
+                                <div class="p-2 bg-light" style="flex: 0 0 20%;">
+                                    &nbsp;
+                                </div>
+                                <div class="p-2 bg-warning text-dark text-center" style="flex: 0 0 20%;">
+                                    <span>{{ indicador.valor|floatformat:1 }}</span>
+                                </div>
+                                <div class="p-2 bg-light" style="flex: 0 0 60%;">
+                                    &nbsp;
+                                </div>
+                            {% elif indicador.valor < 4 %}
+                                <div class="p-2 bg-light" style="flex: 0 0 40%;">
+                                    &nbsp;
+                                </div>
+                                <div class="p-2 bg-info text-white text-center" style="flex: 0 0 20%;">
+                                    <span>{{ indicador.valor|floatformat:1 }}</span>
+                                </div>
+                                <div class="p-2 bg-light" style="flex: 0 0 40%;">
+                                    &nbsp;
+                                </div>
+                            {% else %}
+                                <div class="p-2 bg-light" style="flex: 0 0 60%;">
+                                    &nbsp;
+                                </div>
+                                <div class="p-2 bg-success text-white text-center" style="flex: 0 0 40%;">
+                                    <span>{{ indicador.valor|floatformat:1 }}</span>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-6">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold">Descripción y Recomendaciones</h6>
+                </div>
+                <div class="card-body">
+                    {% if indicador.descripcion %}
+                    <div class="mb-4">
+                        <h6>Descripción</h6>
+                        <div class="border p-3 bg-light">
+                            {{ indicador.descripcion|linebreaks }}
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if indicador.recomendacion %}
+                    <div>
+                        <h6>Recomendación</h6>
+                        <div class="border p-3 bg-light">
+                            {{ indicador.recomendacion|linebreaks }}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+{% endblock %}
