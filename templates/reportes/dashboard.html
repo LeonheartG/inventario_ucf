@@ -1,349 +1,578 @@
 {% extends 'base/base.html' %}
-
 {% block title %}Dashboard - UCF{% endblock %}
-
+{% block extra_css %}
+<!-- Chart.js CSS -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.4/Chart.min.css">
+<!-- Apex Charts CSS -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/apexcharts@3.35.0/dist/apexcharts.min.css">
+<style>
+    .card {
+        transition: all 0.3s ease;
+    }
+    .card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+    }
+    .border-left-primary {
+        border-left: 4px solid var(--primary);
+    }
+    .border-left-success {
+        border-left: 4px solid #28a745;
+    }
+    .border-left-info {
+        border-left: 4px solid var(--secondary);
+    }
+    .border-left-warning {
+        border-left: 4px solid #ffc107;
+    }
+    .chart-container {
+        position: relative;
+        height: 300px;
+        margin-bottom: 20px;
+    }
+</style>
+{% endblock %}
 {% block content %}
 <div class="container">
     <div class="row mb-4">
         <div class="col-lg-12">
-            <h1>Dashboard</h1>
-            <p class="lead">Resumen del Sistema Integral para la Gestión de Inventarios Tecnológicos</p>
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-0 text-gray-800">Dashboard</h1>
+                    <p class="mb-0 text-muted">Sistema Integral para la Gestión de Inventarios Tecnológicos</p>
+                </div>
+                <div>
+                    <button onclick="window.print()" class="btn btn-sm btn-outline-secondary">
+                        <i class="fas fa-print"></i> Imprimir
+                    </button>
+                    <a href="{% url 'reportes_index' %}" class="btn btn-sm btn-primary">
+                        <i class="fas fa-file-alt"></i> Reportes
+                    </a>
+                </div>
+            </div>
             <hr>
         </div>
     </div>
-    
-    <!-- Cards de Resumen -->
-    <div class="row mb-4">
-        <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card border-left-primary shadow h-100 py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
-                                Total de Activos</div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_activos }}</div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-clipboard-list fa-2x text-gray-300"></i>
-                        </div>
+<!-- Cards de Resumen -->
+<div class="row mb-4">
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-primary shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                            Total de Activos</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_activos }}</div>
                     </div>
-                </div>
-            </div>
-        </div>
-        
-        <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card border-left-success shadow h-100 py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
-                                Hardware</div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_hardware }}</div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-desktop fa-2x text-gray-300"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card border-left-info shadow h-100 py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
-                                Software</div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_software }}</div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-file-code fa-2x text-gray-300"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card border-left-warning shadow h-100 py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
-                                Mantenimientos Pendientes</div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ mantenimientos_pendientes }}</div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-tools fa-2x text-gray-300"></i>
-                        </div>
+                    <div class="col-auto">
+                        <i class="fas fa-clipboard-list fa-2x text-gray-300"></i>
                     </div>
                 </div>
             </div>
         </div>
     </div>
     
-    <!-- Gráficos y Tablas -->
-    <div class="row">
-        <!-- Activos por Departamento -->
-        <div class="col-lg-6 mb-4">
-            <div class="card shadow mb-4">
-                <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold">Activos por Departamento</h6>
-                </div>
-                <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-bordered">
-                            <thead>
-                                <tr>
-                                    <th>Departamento</th>
-                                    <th>Cantidad</th>
-                                    <th>Porcentaje</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% if activos_por_departamento %}
-                                    {% for item in activos_por_departamento %}
-                                        <tr>
-                                            <td>{{ item.departamento__nombre }}</td>
-                                            <td>{{ item.total }}</td>
-                                            <td>{{ item.porcentaje|floatformat:1 }}%</td>
-                                        </tr>
-                                    {% endfor %}
-                                {% else %}
-                                    <tr>
-                                        <td colspan="3" class="text-center">No hay datos disponibles</td>
-                                    </tr>
-                                {% endif %}
-                            </tbody>
-                        </table>
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-success shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                            Hardware</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_hardware }}</div>
                     </div>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Activos por Estado -->
-        <div class="col-lg-6 mb-4">
-            <div class="card shadow mb-4">
-                <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold">Activos por Estado</h6>
-                </div>
-                <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-bordered">
-                            <thead>
-                                <tr>
-                                    <th>Estado</th>
-                                    <th>Cantidad</th>
-                                    <th>Porcentaje</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% if activos_por_estado %}
-                                    {% for item in activos_por_estado %}
-                                        <tr>
-                                            <td>
-                                                {% if item.estado == 'activo' %}
-                                                    <span class="badge bg-success">Activo</span>
-                                                {% elif item.estado == 'en_mantenimiento' %}
-                                                    <span class="badge bg-warning">En Mantenimiento</span>
-                                                {% elif item.estado == 'obsoleto' %}
-                                                    <span class="badge bg-danger">Obsoleto</span>
-                                                {% elif item.estado == 'baja' %}
-                                                    <span class="badge bg-secondary">De Baja</span>
-                                                {% endif %}
-                                            </td>
-                                            <td>{{ item.total }}</td>
-                                            <td>{{ item.porcentaje|floatformat:1 }}%</td>
-                                        </tr>
-                                    {% endfor %}
-                                {% else %}
-                                    <tr>
-                                        <td colspan="3" class="text-center">No hay datos disponibles</td>
-                                    </tr>
-                                {% endif %}
-                            </tbody>
-                        </table>
+                    <div class="col-auto">
+                        <i class="fas fa-desktop fa-2x text-gray-300"></i>
                     </div>
                 </div>
             </div>
         </div>
     </div>
     
-    <div class="row">
-        <!-- Software por Vencer -->
-        <div class="col-lg-6 mb-4">
-            <div class="card shadow mb-4">
-                <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold">Software con Licencia por Vencer</h6>
-                </div>
-                <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-bordered">
-                            <thead>
-                                <tr>
-                                    <th>Software</th>
-                                    <th>Versión</th>
-                                    <th>Fecha Vencimiento</th>
-                                    <th>Días Restantes</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% if software_por_vencer %}
-                                    {% for software in software_por_vencer %}
-                                        <tr>
-                                            <td>{{ software.activo.nombre }}</td>
-                                            <td>{{ software.version }}</td>
-                                            <td>{{ software.fecha_vencimiento }}</td>
-                                            <td>
-                                                <span class="badge {% if software.dias_restantes < 7 %}bg-danger{% elif software.dias_restantes < 15 %}bg-warning{% else %}bg-info{% endif %}">
-                                                    {{ software.dias_restantes }} días
-                                                </span>
-                                            </td>
-                                        </tr>
-                                    {% endfor %}
-                                {% else %}
-                                    <tr>
-                                        <td colspan="4" class="text-center">No hay software con licencia por vencer en los próximos 30 días</td>
-                                    </tr>
-                                {% endif %}
-                            </tbody>
-                        </table>
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-info shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                            Software</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_software }}</div>
                     </div>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Mantenimientos Recientes -->
-        <div class="col-lg-6 mb-4">
-            <div class="card shadow mb-4">
-                <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold">Mantenimientos Recientes</h6>
-                </div>
-                <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-bordered">
-                            <thead>
-                                <tr>
-                                    <th>Activo</th>
-                                    <th>Tipo</th>
-                                    <th>Fecha</th>
-                                    <th>Estado</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% if mantenimientos_recientes %}
-                                    {% for mantenimiento in mantenimientos_recientes %}
-                                        <tr>
-                                            <td>{{ mantenimiento.activo.nombre }}</td>
-                                            <td>{{ mantenimiento.get_tipo_display }}</td>
-                                            <td>{{ mantenimiento.fecha_realizacion }}</td>
-                                            <td>
-                                                <span class="badge bg-success">Completado</span>
-                                            </td>
-                                        </tr>
-                                    {% endfor %}
-                                {% else %}
-                                    <tr>
-                                        <td colspan="4" class="text-center">No hay mantenimientos recientes realizados</td>
-                                    </tr>
-                                {% endif %}
-                            </tbody>
-                        </table>
+                    <div class="col-auto">
+                        <i class="fas fa-file-code fa-2x text-gray-300"></i>
                     </div>
                 </div>
             </div>
         </div>
     </div>
     
-    <!-- Transformación Digital -->
-    <div class="row">
-        <div class="col-lg-12 mb-4">
-            <div class="card shadow mb-4">
-                <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold">Nivel de Transformación Digital</h6>
-                </div>
-                <div class="card-body">
-                    <div class="mb-4">
-                        <h5>Nivel General: 
-                            {% if nivel_transformacion %}
-                                <span class="badge {% if nivel_transformacion < 2 %}bg-danger{% elif nivel_transformacion < 3 %}bg-warning{% elif nivel_transformacion < 4 %}bg-info{% else %}bg-success{% endif %}">
-                                    {{ nivel_transformacion|floatformat:2 }} / 5
-                                </span>
-                            {% else %}
-                                <span class="badge bg-secondary">No evaluado</span>
-                            {% endif %}
-                        </h5>
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-warning shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                            Mantenimientos Pendientes</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ mantenimientos_pendientes }}</div>
                     </div>
-                    
-                    {% if nivel_transformacion %}
-                        <div class="alert {% if nivel_transformacion < 2 %}alert-danger{% elif nivel_transformacion < 3 %}alert-warning{% elif nivel_transformacion < 4 %}alert-info{% else %}alert-success{% endif %}">
-                            <i class="fas fa-info-circle"></i> 
-                            {% if nivel_transformacion < 2 %}
-                                La universidad tiene un nivel básico de transformación digital. Es necesario implementar mejoras significativas en este aspecto.
-                            {% elif nivel_transformacion < 3 %}
-                                La universidad tiene un nivel medio-bajo de transformación digital. Se han dado pasos importantes pero se requiere mayor avance.
-                            {% elif nivel_transformacion < 4 %}
-                                La universidad tiene un buen nivel de transformación digital. Continuar con las iniciativas actuales.
-                            {% else %}
-                                La universidad tiene un excelente nivel de transformación digital. Mantener las buenas prácticas implementadas.
-                            {% endif %}
-                        </div>
-                    {% endif %}
-                    
-                    <div class="mt-3">
-                        <a href="{% url 'transformacion_digital_report' %}" class="btn btn-primary">
-                            <i class="fas fa-chart-line"></i> Ver Reporte Completo
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Actividad Reciente -->
-    <div class="row">
-        <div class="col-lg-12 mb-4">
-            <div class="card shadow mb-4">
-                <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold">Actividad Reciente</h6>
-                </div>
-                <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-bordered">
-                            <thead>
-                                <tr>
-                                    <th>Usuario</th>
-                                    <th>Acción</th>
-                                    <th>Fecha</th>
-                                    <th>Detalles</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% if actividades %}
-                                    {% for actividad in actividades %}
-                                        <tr>
-                                            <td>{{ actividad.usuario.get_full_name|default:actividad.usuario.username }}</td>
-                                            <td>{{ actividad.accion }}</td>
-                                            <td>{{ actividad.fecha|date:"d/m/Y H:i" }}</td>
-                                            <td>{{ actividad.detalles|truncatechars:50 }}</td>
-                                        </tr>
-                                    {% endfor %}
-                                {% else %}
-                                    <tr>
-                                        <td colspan="4" class="text-center">No hay actividades recientes registradas</td>
-                                    </tr>
-                                {% endif %}
-                            </tbody>
-                        </table>
+                    <div class="col-auto">
+                        <i class="fas fa-tools fa-2x text-gray-300"></i>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
-{% endblock %}
 
+<!-- Gráficos -->
+<div class="row">
+    <!-- Activos por Departamento -->
+    <div class="col-lg-6 mb-4">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold">Activos por Departamento</h6>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="activosPorDepartamentoChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Activos por Estado -->
+    <div class="col-lg-6 mb-4">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold">Activos por Estado</h6>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="activosPorEstadoChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tendencia de Adquisiciones -->
+<div class="row">
+    <div class="col-lg-12 mb-4">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                <h6 class="m-0 font-weight-bold">Adquisición de Activos por Mes</h6>
+                <div class="dropdown">
+                    <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="chartOptions" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fas fa-cog"></i>
+                    </button>
+                    <ul class="dropdown-menu" aria-labelledby="chartOptions">
+                        <li><a class="dropdown-item" href="#" onclick="updateChartType('line'); return false;">Línea</a></li>
+                        <li><a class="dropdown-item" href="#" onclick="updateChartType('bar'); return false;">Barras</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="{% url 'inventario_report' %}">Ver Reporte Completo</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="card-body">
+                <div id="activosPorMesChart" style="height: 300px;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Software por Vencer -->
+    <div class="col-lg-6 mb-4">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                <h6 class="m-0 font-weight-bold">Software con Licencia por Vencer</h6>
+                <a href="{% url 'software_list' %}" class="btn btn-sm btn-outline-primary">
+                    <i class="fas fa-list"></i> Ver Todos
+                </a>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-bordered">
+                        <thead>
+                            <tr>
+                                <th>Software</th>
+                                <th>Versión</th>
+                                <th>Fecha Vencimiento</th>
+                                <th>Días Restantes</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if software_por_vencer %}
+                                {% for software in software_por_vencer %}
+                                    <tr>
+                                        <td>{{ software.activo.nombre }}</td>
+                                        <td>{{ software.version }}</td>
+                                        <td>{{ software.fecha_vencimiento }}</td>
+                                        <td>
+                                            <span class="badge {% if software.dias_restantes < 7 %}bg-danger{% elif software.dias_restantes < 15 %}bg-warning{% else %}bg-info{% endif %}">
+                                                {{ software.dias_restantes }} días
+                                            </span>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="4" class="text-center">No hay software con licencia por vencer en los próximos 30 días</td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Mantenimientos Recientes -->
+    <div class="col-lg-6 mb-4">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                <h6 class="m-0 font-weight-bold">Mantenimientos Recientes</h6>
+                <a href="{% url 'mantenimiento_list' %}" class="btn btn-sm btn-outline-primary">
+                    <i class="fas fa-list"></i> Ver Todos
+                </a>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-bordered">
+                        <thead>
+                            <tr>
+                                <th>Activo</th>
+                                <th>Tipo</th>
+                                <th>Fecha</th>
+                                <th>Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if mantenimientos_recientes %}
+                                {% for mantenimiento in mantenimientos_recientes %}
+                                    <tr>
+                                        <td><a href="{% url 'mantenimiento_detail' mantenimiento.id %}">{{ mantenimiento.activo.nombre }}</a></td>
+                                        <td>{{ mantenimiento.get_tipo_display }}</td>
+                                        <td>{{ mantenimiento.fecha_realizacion }}</td>
+                                        <td>
+                                            <span class="badge bg-success">Completado</span>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="4" class="text-center">No hay mantenimientos recientes realizados</td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Transformación Digital y Nivel de Madurez -->
+<div class="row">
+    <div class="col-lg-12 mb-4">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                <h6 class="m-0 font-weight-bold">Nivel de Transformación Digital</h6>
+                <a href="{% url 'transformacion_digital_report' %}" class="btn btn-sm btn-outline-primary">
+                    <i class="fas fa-chart-line"></i> Ver Reporte Completo
+                </a>
+            </div>
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col-md-4">
+                        <div id="medidorTransformacionDigital" style="height: 250px;"></div>
+                    </div>
+                    <div class="col-md-8">
+                        <div class="mb-4">
+                            <h5>Nivel General: 
+                                {% if nivel_transformacion %}
+                                    <span class="badge {% if nivel_transformacion < 2 %}bg-danger{% elif nivel_transformacion < 3 %}bg-warning{% elif nivel_transformacion < 4 %}bg-info{% else %}bg-success{% endif %}">
+                                        {{ nivel_transformacion|floatformat:2 }} / 5
+                                    </span>
+                                {% else %}
+                                    <span class="badge bg-secondary">No evaluado</span>
+                                {% endif %}
+                            </h5>
+                        </div>
+                        
+                        {% if nivel_transformacion %}
+                            <div class="alert {% if nivel_transformacion < 2 %}alert-danger{% elif nivel_transformacion < 3 %}alert-warning{% elif nivel_transformacion < 4 %}alert-info{% else %}alert-success{% endif %}">
+                                <i class="fas fa-info-circle"></i> 
+                                {% if nivel_transformacion < 2 %}
+                                    La universidad tiene un nivel básico de transformación digital. Es necesario implementar mejoras significativas en este aspecto.
+                                {% elif nivel_transformacion < 3 %}
+                                    La universidad tiene un nivel medio-bajo de transformación digital. Se han dado pasos importantes pero se requiere mayor avance.
+                                {% elif nivel_transformacion < 4 %}
+                                    La universidad tiene un buen nivel de transformación digital. Continuar con las iniciativas actuales.
+                                {% else %}
+                                    La universidad tiene un excelente nivel de transformación digital. Mantener las buenas prácticas implementadas.
+                                {% endif %}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Actividad Reciente -->
+<div class="row">
+    <div class="col-lg-12 mb-4">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold">Actividad Reciente</h6>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-bordered">
+                        <thead>
+                            <tr>
+                                <th>Usuario</th>
+                                <th>Acción</th>
+                                <th>Fecha</th>
+                                <th>Detalles</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if actividades %}
+                                {% for actividad in actividades %}
+                                    <tr>
+                                        <td>{{ actividad.usuario.get_full_name|default:actividad.usuario.username }}</td>
+                                        <td>{{ actividad.accion }}</td>
+                                        <td>{{ actividad.fecha|date:"d/m/Y H:i" }}</td>
+                                        <td>{{ actividad.detalles|truncatechars:50 }}</td>
+                                    </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="4" class="text-center">No hay actividades recientes registradas</td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+{% endblock %}
 {% block extra_js %}
-<script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
+<script>
+    // Crear un objeto JavaScript seguro con los datos de Django
+    var datosJS = {
+        // Datos de departamentos
+        departamentos: JSON.parse('{{ departamentos_nombres|escapejs }}'),
+        departamentosTotales: JSON.parse('{{ departamentos_totales|escapejs }}'),
+        
+        // Datos de estados
+        estados: JSON.parse('{{ estados_nombres|escapejs }}'),
+        estadosTotales: JSON.parse('{{ estados_totales|escapejs }}'),
+        estadosColores: JSON.parse('{{ estados_colores|escapejs }}'),
+        
+        // Datos mensuales
+        meses: {{ chart_activos_meses|safe }},
+        totales: {{ chart_activos_totales|safe }},
+        
+        // Nivel de transformación digital
+        nivelTransformacion: {{ nivel_transformacion|default:0|floatformat:1 }}
+    };
+    
+    // Inicializar todos los gráficos cuando el DOM esté listo
+    document.addEventListener('DOMContentLoaded', function() {
+        // Gráfico de activos por mes
+        let activosMesChart;
+        initActivosMesChart('line');
+        
+        // Función para inicializar/actualizar el gráfico de activos por mes
+        function initActivosMesChart(type = 'line') {
+            const ctx = document.getElementById('activosMesChart');
+            if (!ctx) return; // Omitir si el elemento no existe
+            
+            // Destruir el gráfico anterior si existe
+            if (activosMesChart) {
+                activosMesChart.destroy();
+            }
+            
+            activosMesChart = new Chart(ctx, {
+                type: type,
+                data: {
+                    labels: datosJS.meses,
+                    datasets: [{
+                        label: 'Activos Adquiridos',
+                        data: datosJS.totales,
+                        backgroundColor: 'rgba(78, 115, 223, 0.2)',
+                        borderColor: 'rgba(78, 115, 223, 1)',
+                        borderWidth: 2,
+                        tension: 0.3,
+                        pointBackgroundColor: 'rgba(78, 115, 223, 1)',
+                        pointBorderColor: '#fff',
+                        pointHoverBackgroundColor: '#fff',
+                        pointHoverBorderColor: 'rgba(78, 115, 223, 1)'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top'
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                precision: 0
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Función para actualizar el tipo de gráfico (puede ser llamada desde HTML)
+        window.updateChartType = function(type) {
+            initActivosMesChart(type);
+        };
+        
+        // Gráfico de distribución por estado
+        const ctxEstado = document.getElementById('activosEstadoChart');
+        if (ctxEstado) {
+            const activosEstadoChart = new Chart(ctxEstado, {
+                type: 'doughnut',
+                data: {
+                    labels: datosJS.estados,
+                    datasets: [{
+                        data: datosJS.estadosTotales,
+                        backgroundColor: datosJS.estadosColores,
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    },
+                    cutout: '70%'
+                }
+            });
+        }
+        
+        // Gráfico de departamentos
+        const ctxDepartamento = document.getElementById('departamentoChart');
+        if (ctxDepartamento) {
+            const departamentoColors = [
+                '#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b', 
+                '#5a5c69', '#6610f2', '#fd7e14', '#20c997', '#6f42c1'
+            ];
+            
+            const departamentoChart = new Chart(ctxDepartamento, {
+                type: 'pie',
+                data: {
+                    labels: datosJS.departamentos,
+                    datasets: [{
+                        data: datosJS.departamentosTotales,
+                        backgroundColor: departamentoColors.slice(0, datosJS.departamentos.length),
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right'
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Gráfico de transformación digital
+        const ctxTransformacion = document.getElementById('transformacionChart');
+        if (ctxTransformacion) {
+            // Determinar el color basado en el nivel de transformación
+            let transformacionColor;
+            if (datosJS.nivelTransformacion < 2) {
+                transformacionColor = '#dc3545'; // Peligro
+            } else if (datosJS.nivelTransformacion < 3) {
+                transformacionColor = '#ffc107'; // Advertencia
+            } else if (datosJS.nivelTransformacion < 4) {
+                transformacionColor = '#17a2b8'; // Info
+            } else {
+                transformacionColor = '#28a745'; // Éxito
+            }
+            
+            const transformacionChart = new Chart(ctxTransformacion, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Nivel Actual', 'Restante'],
+                    datasets: [{
+                        data: [datosJS.nivelTransformacion, 5 - datosJS.nivelTransformacion],
+                        backgroundColor: [transformacionColor, '#e9ecef'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    circumference: 180,
+                    rotation: -90,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.label === 'Nivel Actual' ? 
+                                        `Nivel: ${datosJS.nivelTransformacion} / 5` : '';
+                                }
+                            }
+                        }
+                    },
+                    cutout: '80%'
+                }
+            });
+        }
+        
+        // Alternar entre tabla y gráfico para departamentos
+        const showChartBtn = document.getElementById('showChartBtn');
+        const showTableBtn = document.getElementById('showTableBtn');
+        const departamentoChartContainer = document.getElementById('departamentoChartContainer');
+        const departamentoTableContainer = document.getElementById('departamentoTableContainer');
+        
+        if (showChartBtn && showTableBtn && departamentoChartContainer && departamentoTableContainer) {
+            showChartBtn.addEventListener('click', function() {
+                departamentoChartContainer.style.display = 'block';
+                departamentoTableContainer.style.display = 'none';
+                this.classList.add('active');
+                showTableBtn.classList.remove('active');
+            });
+            
+            showTableBtn.addEventListener('click', function() {
+                departamentoChartContainer.style.display = 'none';
+                departamentoTableContainer.style.display = 'block';
+                this.classList.add('active');
+                showChartBtn.classList.remove('active');
+            });
+        }
+    });
+</script>
 {% endblock %}

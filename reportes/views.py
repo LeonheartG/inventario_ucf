@@ -118,6 +118,39 @@ def dashboard(request):
             chart_activos_meses.append(item['mes'].strftime('%b %Y'))
             chart_activos_totales.append(item['total'])
 
+    # Preparar datos para JavaScript
+    # Department data: Create arrays for names and totals
+    departamentos_nombres = []
+    departamentos_totales = []
+
+    for item in activos_por_departamento:
+        departamentos_nombres.append(item['departamento__nombre'])
+        departamentos_totales.append(item['total'])
+
+    # Status data: Create arrays for names, totals, and colors
+    estados_nombres = []
+    estados_totales = []
+    estados_colores = []
+
+    for item in activos_por_estado:
+        if item['estado'] == 'activo':
+            estados_nombres.append('Activo')
+            estados_colores.append('#28a745')
+        elif item['estado'] == 'en_mantenimiento':
+            estados_nombres.append('En Mantenimiento')
+            estados_colores.append('#ffc107')
+        elif item['estado'] == 'obsoleto':
+            estados_nombres.append('Obsoleto')
+            estados_colores.append('#dc3545')
+        elif item['estado'] == 'baja':
+            estados_nombres.append('De Baja')
+            estados_colores.append('#6c757d')
+        else:
+            estados_nombres.append(item['estado'])
+            estados_colores.append('#6c757d')  # Default color
+
+        estados_totales.append(item['total'])
+
     context = {
         'total_activos': total_activos,
         'total_hardware': total_hardware,
@@ -132,6 +165,13 @@ def dashboard(request):
         # Datos para gráficos
         'chart_activos_meses': json.dumps(chart_activos_meses),
         'chart_activos_totales': json.dumps(chart_activos_totales),
+
+        # Add these new JSONified arrays for JavaScript
+        'departamentos_nombres': json.dumps(departamentos_nombres),
+        'departamentos_totales': json.dumps(departamentos_totales),
+        'estados_nombres': json.dumps(estados_nombres),
+        'estados_totales': json.dumps(estados_totales),
+        'estados_colores': json.dumps(estados_colores),
     }
 
     return render(request, 'reportes/dashboard.html', context)
