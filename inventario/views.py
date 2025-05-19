@@ -58,17 +58,28 @@ def hardware_create(request):
     if request.method == 'POST':
         form = HardwareForm(request.POST, request.FILES)
         if form.is_valid():
-            hardware = form.save(user=request.user)
+            try:
+                hardware = form.save(user=request.user)
 
-            # Registrar actividad
-            LogActividad.objects.create(
-                usuario=request.user,
-                accion=f"Creación de hardware: {hardware.activo.nombre}",
-                detalles=f"Hardware {hardware.marca} {hardware.modelo} con número de serie {hardware.numero_serie}"
-            )
+                # Registrar actividad
+                LogActividad.objects.create(
+                    usuario=request.user,
+                    accion=f"Creación de hardware: {hardware.activo.nombre}",
+                    detalles=f"Hardware {hardware.marca} {hardware.modelo} con número de serie {hardware.numero_serie}"
+                )
 
-            messages.success(request, 'Hardware registrado correctamente.')
-            return redirect('hardware_detail', pk=hardware.activo_id)
+                messages.success(request, 'Hardware registrado correctamente.')
+                return redirect('hardware_detail', pk=hardware.activo_id)
+            except Exception as e:
+                # Capturar y mostrar errores específicos
+                messages.error(
+                    request, f'Error al guardar el hardware: {str(e)}')
+        else:
+            # Mostrar errores de validación del formulario
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(
+                        request, f'Error en el campo {field}: {error}')
     else:
         form = HardwareForm()
 

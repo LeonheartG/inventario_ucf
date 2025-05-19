@@ -37,7 +37,15 @@ def login_view(request):
             except PerfilUsuario.DoesNotExist:
                 # Si el perfil no existe, crearlo
                 departamento = Departamento.objects.first()
-                rol = Rol.objects.get(nombre="Usuario Regular")
+                if not departamento:
+                    departamento = Departamento.objects.create(
+                        nombre="General")
+
+                rol, created = Rol.objects.get_or_create(
+                    nombre="Usuario Regular",
+                    defaults={'descripcion': 'Usuario con permisos básicos'}
+                )
+
                 PerfilUsuario.objects.create(
                     usuario=user,
                     departamento=departamento,
@@ -88,7 +96,11 @@ def register_view(request):
             # Crear perfil de usuario
             departamento_id = form.cleaned_data.get('departamento')
             departamento = Departamento.objects.get(id=departamento_id)
-            rol = Rol.objects.get(nombre="Usuario Regular")
+
+            rol, created = Rol.objects.get_or_create(
+                nombre="Usuario Regular",
+                defaults={'descripcion': 'Usuario con permisos básicos'}
+            )
 
             PerfilUsuario.objects.create(
                 usuario=user,
@@ -117,16 +129,35 @@ def register_view(request):
 @login_required
 def profile_view(request):
     """Vista para el perfil de usuario"""
+    # Asegurarse de que el usuario tiene un perfil
+    try:
+        perfil = request.user.perfil
+    except PerfilUsuario.DoesNotExist:
+        # Crear perfil si no existe
+        departamento = Departamento.objects.first()
+        if not departamento:
+            departamento = Departamento.objects.create(nombre="General")
+
+        rol, created = Rol.objects.get_or_create(
+            nombre="Usuario Regular",
+            defaults={'descripcion': 'Usuario con permisos básicos'}
+        )
+
+        perfil = PerfilUsuario.objects.create(
+            usuario=request.user,
+            departamento=departamento,
+            rol=rol
+        )
+
     if request.method == 'POST':
-        form = PerfilForm(request.POST, request.FILES,
-                          instance=request.user.perfil)
+        form = PerfilForm(request.POST, request.FILES, instance=perfil)
         if form.is_valid():
             form.save()
             messages.success(
                 request, 'Tu perfil ha sido actualizado correctamente.')
             return redirect('perfil')
     else:
-        form = PerfilForm(instance=request.user.perfil)
+        form = PerfilForm(instance=perfil)
 
     return render(request, 'usuarios/profile.html', {'form': form})
 
@@ -134,15 +165,22 @@ def profile_view(request):
 @login_required
 def dashboard_view(request):
     """Vista del dashboard principal"""
-    # Datos para el dashboard
-    from inventario.models import Activo, Hardware, Software, Mantenimiento
+    # Importación dentro de la función para evitar problemas de importación circular
+    try:
+        from inventario.models import Activo, Hardware, Software, Mantenimiento
 
-    # Contadores
-    total_activos = Activo.objects.count()
-    total_hardware = Hardware.objects.count()
-    total_software = Software.objects.count()
-    mantenimientos_pendientes = Mantenimiento.objects.filter(
-        estado='programado').count()
+        # Contadores
+        total_activos = Activo.objects.count()
+        total_hardware = Hardware.objects.count()
+        total_software = Software.objects.count()
+        mantenimientos_pendientes = Mantenimiento.objects.filter(
+            estado='programado').count()
+    except ImportError:
+        # En caso de que no existan todavía los modelos de inventario
+        total_activos = 0
+        total_hardware = 0
+        total_software = 0
+        mantenimientos_pendientes = 0
 
     # Obtener actividades recientes
     actividades = LogActividad.objects.all().order_by('-fecha')[:10]

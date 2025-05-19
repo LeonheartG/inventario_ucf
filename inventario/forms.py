@@ -28,75 +28,109 @@ class HardwareForm(forms.ModelForm):
     fecha_garantia = forms.DateField(widget=forms.DateInput(
         attrs={'type': 'date'}), required=False, label='Fecha de garantía')
     proveedor = forms.ModelChoiceField(
-        queryset=Proveedor.objects.all(), required=False, label='Proveedor')
+        queryset=Proveedor.objects.all(), required=True, label='Proveedor')
     periodicidad_mantenimiento = forms.IntegerField(
-        initial=180, label='Periodicidad de mantenimiento (días)')
+        initial=180, label='Periodicidad de mantenimiento (días)', required=True)
 
     class Meta:
         model = Hardware
-        fields = []  # No usamos los campos del modelo directamente, ya que trabajamos con dos modelos
+        fields = []  # No usamos los campos del modelo directamente
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Asegurarnos de que hay al menos un proveedor disponible
+        if not self.fields['proveedor'].queryset.exists():
+            # Crear un proveedor por defecto si no hay ninguno
+            proveedor, created = Proveedor.objects.get_or_create(
+                nombre="Proveedor General",
+                defaults={
+                    'telefono': '000-000-0000',
+                    'email': 'no-email@example.com'
+                }
+            )
+            # Actualizar el queryset
+            self.fields['proveedor'].queryset = Proveedor.objects.all()
+
+        # Establecer valores iniciales para campos obligatorios
+        if not self.initial.get('periodicidad_mantenimiento'):
+            self.initial['periodicidad_mantenimiento'] = 180
 
     def save(self, commit=True, user=None):
-        # Primero creamos o actualizamos el activo
-        activo_id = self.instance.activo_id if hasattr(
-            self.instance, 'activo_id') and self.instance.activo_id else None
+        try:
+            # Primero creamos o actualizamos el activo
+            activo_id = self.instance.activo_id if hasattr(
+                self.instance, 'activo_id') and self.instance.activo_id else None
 
-        if activo_id:
-            activo = Activo.objects.get(id=activo_id)
-            activo.nombre = self.cleaned_data['nombre']
-            activo.descripcion = self.cleaned_data['descripcion']
-            activo.fecha_adquisicion = self.cleaned_data['fecha_adquisicion']
-            activo.valor_adquisicion = self.cleaned_data['valor_adquisicion']
-            activo.estado = self.cleaned_data['estado']
-            activo.departamento = self.cleaned_data['departamento']
-            activo.ubicacion = self.cleaned_data['ubicacion']
+            if activo_id:
+                activo = Activo.objects.get(id=activo_id)
+                activo.nombre = self.cleaned_data['nombre']
+                activo.descripcion = self.cleaned_data['descripcion']
+                activo.fecha_adquisicion = self.cleaned_data['fecha_adquisicion']
+                activo.valor_adquisicion = self.cleaned_data['valor_adquisicion']
+                activo.estado = self.cleaned_data['estado']
+                activo.departamento = self.cleaned_data['departamento']
+                activo.ubicacion = self.cleaned_data['ubicacion']
 
-            if self.cleaned_data['imagen']:
-                activo.imagen = self.cleaned_data['imagen']
+                if self.cleaned_data['imagen']:
+                    activo.imagen = self.cleaned_data['imagen']
 
-            if user:
-                activo.actualizado_por = user
+                if user:
+                    activo.actualizado_por = user
 
-            activo.save()
-        else:
-            activo = Activo.objects.create(
-                tipo='hardware',
-                nombre=self.cleaned_data['nombre'],
-                descripcion=self.cleaned_data['descripcion'],
-                fecha_adquisicion=self.cleaned_data['fecha_adquisicion'],
-                valor_adquisicion=self.cleaned_data['valor_adquisicion'],
-                estado=self.cleaned_data['estado'],
-                departamento=self.cleaned_data['departamento'],
-                ubicacion=self.cleaned_data['ubicacion'],
-                imagen=self.cleaned_data['imagen'] if self.cleaned_data['imagen'] else None,
-                creado_por=user,
-                actualizado_por=user
-            )
+                activo.save()
+            else:
+                activo = Activo.objects.create(
+                    tipo='hardware',
+                    nombre=self.cleaned_data['nombre'],
+                    descripcion=self.cleaned_data['descripcion'],
+                    fecha_adquisicion=self.cleaned_data['fecha_adquisicion'],
+                    valor_adquisicion=self.cleaned_data['valor_adquisicion'],
+                    estado=self.cleaned_data['estado'],
+                    departamento=self.cleaned_data['departamento'],
+                    ubicacion=self.cleaned_data['ubicacion'],
+                    imagen=self.cleaned_data['imagen'] if self.cleaned_data['imagen'] else None,
+                    creado_por=user,
+                    actualizado_por=user
+                )
 
-        # Ahora creamos o actualizamos el hardware
-        if activo_id:
-            hardware = self.instance
-            hardware.marca = self.cleaned_data['marca']
-            hardware.modelo = self.cleaned_data['modelo']
-            hardware.numero_serie = self.cleaned_data['numero_serie']
-            hardware.especificaciones = self.cleaned_data['especificaciones']
-            hardware.fecha_garantia = self.cleaned_data['fecha_garantia']
-            hardware.proveedor = self.cleaned_data['proveedor']
-            hardware.periodicidad_mantenimiento = self.cleaned_data['periodicidad_mantenimiento']
-            hardware.save()
-        else:
-            hardware = Hardware.objects.create(
-                activo=activo,
-                marca=self.cleaned_data['marca'],
-                modelo=self.cleaned_data['modelo'],
-                numero_serie=self.cleaned_data['numero_serie'],
-                especificaciones=self.cleaned_data['especificaciones'],
-                fecha_garantia=self.cleaned_data['fecha_garantia'],
-                proveedor=self.cleaned_data['proveedor'],
-                periodicidad_mantenimiento=self.cleaned_data['periodicidad_mantenimiento']
-            )
+            # Ahora creamos o actualizamos el hardware
+            try:
+                if activo_id:
+                    hardware = self.instance
+                    hardware.marca = self.cleaned_data['marca']
+                    hardware.modelo = self.cleaned_data['modelo']
+                    hardware.numero_serie = self.cleaned_data['numero_serie']
+                    hardware.especificaciones = self.cleaned_data['especificaciones']
+                    hardware.fecha_garantia = self.cleaned_data['fecha_garantia']
+                    hardware.proveedor = self.cleaned_data['proveedor']
+                    hardware.periodicidad_mantenimiento = self.cleaned_data[
+                        'periodicidad_mantenimiento']
+                    hardware.save()
+                else:
+                    hardware = Hardware.objects.create(
+                        activo=activo,
+                        marca=self.cleaned_data['marca'],
+                        modelo=self.cleaned_data['modelo'],
+                        numero_serie=self.cleaned_data['numero_serie'],
+                        especificaciones=self.cleaned_data['especificaciones'],
+                        fecha_garantia=self.cleaned_data['fecha_garantia'],
+                        proveedor=self.cleaned_data['proveedor'],
+                        periodicidad_mantenimiento=self.cleaned_data['periodicidad_mantenimiento']
+                    )
+                return hardware
+            except Exception as e:
+                # Si hay un error al crear el hardware, eliminamos el activo recién creado
+                if 'activo' in locals() and not activo_id:
+                    activo.delete()
 
-        return hardware
+                # Añadir el error al formulario
+                self.add_error(
+                    'numero_serie', f"Error al crear hardware: {str(e)}")
+                raise
+        except Exception as e:
+            # Capturar cualquier error y añadirlo al formulario
+            self.add_error(None, f"Error al guardar: {str(e)}")
+            raise
 
 # Agregar a inventario/forms.py
 
