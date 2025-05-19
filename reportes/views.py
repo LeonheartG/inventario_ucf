@@ -9,6 +9,7 @@ from django.http import HttpResponse
 import csv
 import json
 from io import BytesIO
+import os
 
 # Importaciones de modelos
 from inventario.models import Activo, Hardware, Software, Mantenimiento, Proveedor
@@ -38,7 +39,7 @@ def index(request):
 
 
 @login_required
-def reportes_dashboard(request):
+def dashboard(request):
     """Dashboard principal con indicadores clave"""
     # Datos para el dashboard
     total_activos = Activo.objects.count()
@@ -55,7 +56,7 @@ def reportes_dashboard(request):
         'departamento__nombre'
     ).annotate(
         total=Count('id'),
-        porcentaje=Count('id') * 100.0 / total_activos
+        porcentaje=Count('id') * 100.0 / total_activos if total_activos else 0
     ).order_by('-total')
 
     # Activos por estado
@@ -63,7 +64,7 @@ def reportes_dashboard(request):
         'estado'
     ).annotate(
         total=Count('id'),
-        porcentaje=Count('id') * 100.0 / total_activos
+        porcentaje=Count('id') * 100.0 / total_activos if total_activos else 0
     ).order_by('-total')
 
     # Software por vencer (próximos 30 días)
@@ -100,6 +101,23 @@ def reportes_dashboard(request):
     except:
         nivel_transformacion = 0
 
+    # Datos para gráficos
+    # Crear datos para gráfico de activos por mes
+    activos_por_mes = Activo.objects.annotate(
+        mes=TruncMonth('fecha_adquisicion')
+    ).values('mes').annotate(
+        total=Count('id')
+    ).order_by('mes')
+
+    # Convertir a formato para Chart.js
+    chart_activos_meses = []
+    chart_activos_totales = []
+
+    for item in activos_por_mes:
+        if item['mes']:
+            chart_activos_meses.append(item['mes'].strftime('%b %Y'))
+            chart_activos_totales.append(item['total'])
+
     context = {
         'total_activos': total_activos,
         'total_hardware': total_hardware,
@@ -110,7 +128,10 @@ def reportes_dashboard(request):
         'software_por_vencer': software_por_vencer,
         'mantenimientos_recientes': mantenimientos_recientes,
         'actividades': actividades,
-        'nivel_transformacion': nivel_transformacion
+        'nivel_transformacion': nivel_transformacion,
+        # Datos para gráficos
+        'chart_activos_meses': json.dumps(chart_activos_meses),
+        'chart_activos_totales': json.dumps(chart_activos_totales),
     }
 
     return render(request, 'reportes/dashboard.html', context)
@@ -119,18 +140,26 @@ def reportes_dashboard(request):
 @login_required
 def inventario_report(request):
     """Página para generar reporte de inventario"""
-    # Datos para el formulario
-    departamentos = Departamento.objects.all()
+    from .forms import InventarioReportForm
+
+    if request.method == 'GET' and any(param for param in request.GET if param not in ['page']):
+        # Si hay parámetros en la URL, procesar el formulario
+        form = InventarioReportForm(request.GET)
+        if form.is_valid():
+            # Redireccionar a la vista de resultados
+            if form.cleaned_data.get('formato', 'html') != 'html':
+                # Si el formato no es HTML, exportar directamente
+                formato = form.cleaned_data.get('formato')
+                return redirect('export_inventario', format=formato)
+            else:
+                # Si es HTML, mostrar resultados
+                return redirect('inventario_report_result')
+    else:
+        # Si no hay parámetros, mostrar formulario vacío
+        form = InventarioReportForm()
 
     context = {
-        'departamentos': departamentos,
-        'form': {
-            'fields': {
-                'departamento': {
-                    'queryset': departamentos
-                }
-            }
-        }
+        'form': form
     }
 
     return render(request, 'reportes/inventario_report.html', context)
@@ -139,54 +168,46 @@ def inventario_report(request):
 @login_required
 def inventario_report_result(request):
     """Resultados del reporte de inventario"""
+    from .forms import InventarioReportForm
+
     # Obtener parámetros del formulario
-    tipo = request.GET.get('tipo', '')
-    departamento = request.GET.get('departamento', '')
-    estado = request.GET.get('estado', '')
-    fecha_inicio = request.GET.get('fecha_inicio', '')
-    fecha_fin = request.GET.get('fecha_fin', '')
-    formato = request.GET.get('formato', 'html')
+    form = InventarioReportForm(request.GET)
 
     # Filtrar activos
     activos = Activo.objects.all().select_related('departamento')
 
-    if tipo:
-        activos = activos.filter(tipo=tipo)
+    if form.is_valid():
+        # Aplicar filtros si el formulario es válido
+        tipo = form.cleaned_data.get('tipo')
+        departamento = form.cleaned_data.get('departamento')
+        estado = form.cleaned_data.get('estado')
+        fecha_inicio = form.cleaned_data.get('fecha_inicio')
+        fecha_fin = form.cleaned_data.get('fecha_fin')
+        formato = form.cleaned_data.get('formato', 'html')
 
-    if departamento:
-        activos = activos.filter(departamento_id=departamento)
+        if tipo:
+            activos = activos.filter(tipo=tipo)
 
-    if estado:
-        activos = activos.filter(estado=estado)
+        if departamento:
+            activos = activos.filter(departamento=departamento)
 
-    if fecha_inicio:
-        activos = activos.filter(fecha_adquisicion__gte=fecha_inicio)
+        if estado:
+            activos = activos.filter(estado=estado)
 
-    if fecha_fin:
-        activos = activos.filter(fecha_adquisicion__lte=fecha_fin)
+        if fecha_inicio:
+            activos = activos.filter(fecha_adquisicion__gte=fecha_inicio)
 
-    # Si el formato es diferente de HTML, exportar
-    if formato != 'html':
-        return export_inventario(request, activos, formato)
+        if fecha_fin:
+            activos = activos.filter(fecha_adquisicion__lte=fecha_fin)
+
+        # Si el formato es diferente de HTML, exportar
+        if formato != 'html':
+            return export_inventario(request, formato)
 
     # Para HTML, preparar contexto
-    departamentos = Departamento.objects.all()
-
     context = {
         'activos': activos,
-        'form': {
-            'tipo': {'value': tipo},
-            'departamento': {'value': departamento},
-            'estado': {'value': estado},
-            'fecha_inicio': {'value': fecha_inicio},
-            'fecha_fin': {'value': fecha_fin},
-            'formato': {'value': formato},
-            'fields': {
-                'departamento': {
-                    'queryset': departamentos
-                }
-            }
-        }
+        'form': form
     }
 
     return render(request, 'reportes/inventario_report_result.html', context)
@@ -345,18 +366,26 @@ def obsolescencia_report(request):
 @login_required
 def mantenimiento_report(request):
     """Página para generar reporte de mantenimientos"""
-    # Datos para el formulario
-    from django.contrib.auth.models import User
-    usuarios = User.objects.all()
+    from .forms import MantenimientoReportForm
+
+    if request.method == 'GET' and any(param for param in request.GET if param not in ['page']):
+        # Si hay parámetros en la URL, procesar el formulario
+        form = MantenimientoReportForm(request.GET)
+        if form.is_valid():
+            # Redireccionar a la vista de resultados
+            if form.cleaned_data.get('formato', 'html') != 'html':
+                # Si el formato no es HTML, exportar directamente
+                formato = form.cleaned_data.get('formato')
+                return redirect('export_mantenimiento', format=formato)
+            else:
+                # Si es HTML, mostrar resultados
+                return redirect('mantenimiento_report_result')
+    else:
+        # Si no hay parámetros, mostrar formulario vacío
+        form = MantenimientoReportForm()
 
     context = {
-        'form': {
-            'fields': {
-                'responsable': {
-                    'queryset': usuarios
-                }
-            }
-        }
+        'form': form
     }
 
     return render(request, 'reportes/mantenimiento_report.html', context)
@@ -365,36 +394,42 @@ def mantenimiento_report(request):
 @login_required
 def mantenimiento_report_result(request):
     """Resultados del reporte de mantenimientos"""
+    from .forms import MantenimientoReportForm
+
     # Obtener parámetros del formulario
-    tipo = request.GET.get('tipo', '')
-    estado = request.GET.get('estado', '')
-    responsable = request.GET.get('responsable', '')
-    fecha_inicio = request.GET.get('fecha_inicio', '')
-    fecha_fin = request.GET.get('fecha_fin', '')
-    formato = request.GET.get('formato', 'html')
+    form = MantenimientoReportForm(request.GET)
 
     # Filtrar mantenimientos
     mantenimientos = Mantenimiento.objects.all().select_related('activo', 'responsable')
 
-    if tipo:
-        mantenimientos = mantenimientos.filter(tipo=tipo)
+    if form.is_valid():
+        tipo = form.cleaned_data.get('tipo')
+        estado = form.cleaned_data.get('estado')
+        responsable = form.cleaned_data.get('responsable')
+        fecha_inicio = form.cleaned_data.get('fecha_inicio')
+        fecha_fin = form.cleaned_data.get('fecha_fin')
+        formato = form.cleaned_data.get('formato', 'html')
 
-    if estado:
-        mantenimientos = mantenimientos.filter(estado=estado)
+        if tipo:
+            mantenimientos = mantenimientos.filter(tipo=tipo)
 
-    if responsable:
-        mantenimientos = mantenimientos.filter(responsable_id=responsable)
+        if estado:
+            mantenimientos = mantenimientos.filter(estado=estado)
 
-    if fecha_inicio:
-        mantenimientos = mantenimientos.filter(
-            fecha_programada__gte=fecha_inicio)
+        if responsable:
+            mantenimientos = mantenimientos.filter(responsable=responsable)
 
-    if fecha_fin:
-        mantenimientos = mantenimientos.filter(fecha_programada__lte=fecha_fin)
+        if fecha_inicio:
+            mantenimientos = mantenimientos.filter(
+                fecha_programada__gte=fecha_inicio)
 
-    # Si el formato es diferente de HTML, exportar
-    if formato != 'html':
-        return export_mantenimiento(request, mantenimientos, formato)
+        if fecha_fin:
+            mantenimientos = mantenimientos.filter(
+                fecha_programada__lte=fecha_fin)
+
+        # Si el formato es diferente de HTML, exportar
+        if formato != 'html':
+            return export_mantenimiento(request, formato)
 
     # Calcular estadísticas
     completados = mantenimientos.filter(estado='completado').count()
@@ -402,31 +437,14 @@ def mantenimiento_report_result(request):
         Q(estado='programado') | Q(estado='en_proceso')).count()
 
     # Calcular costo total
-    from django.db.models import Sum
     costo_total = mantenimientos.aggregate(total=Sum('costo'))['total'] or 0
-
-    # Para HTML, preparar contexto
-    from django.contrib.auth.models import User
-    usuarios = User.objects.all()
 
     context = {
         'mantenimientos': mantenimientos,
         'completados': completados,
         'pendientes': pendientes,
         'costo_total': costo_total,
-        'form': {
-            'tipo': {'value': tipo},
-            'estado': {'value': estado},
-            'responsable': {'value': responsable},
-            'fecha_inicio': {'value': fecha_inicio},
-            'fecha_fin': {'value': fecha_fin},
-            'formato': {'value': formato},
-            'fields': {
-                'responsable': {
-                    'queryset': usuarios
-                }
-            }
-        }
+        'form': form
     }
 
     return render(request, 'reportes/mantenimiento_report_result.html', context)
@@ -435,16 +453,26 @@ def mantenimiento_report_result(request):
 @login_required
 def transformacion_digital_report(request):
     """Página para generar reporte de transformación digital"""
-    departamentos = Departamento.objects.all()
+    from .forms import TransformacionDigitalReportForm
+
+    if request.method == 'GET' and any(param for param in request.GET if param not in ['page']):
+        # Si hay parámetros en la URL, procesar el formulario
+        form = TransformacionDigitalReportForm(request.GET)
+        if form.is_valid():
+            # Redireccionar a la vista de resultados
+            if form.cleaned_data.get('formato', 'html') != 'html':
+                # Si el formato no es HTML, exportar directamente
+                formato = form.cleaned_data.get('formato')
+                return redirect('export_diagnostico', format=formato)
+            else:
+                # Si es HTML, mostrar resultados
+                return redirect('transformacion_digital_report_result')
+    else:
+        # Si no hay parámetros, mostrar formulario vacío
+        form = TransformacionDigitalReportForm()
 
     context = {
-        'form': {
-            'fields': {
-                'departamento': {
-                    'queryset': departamentos
-                }
-            }
-        }
+        'form': form
     }
 
     return render(request, 'reportes/transformacion_digital_report.html', context)
@@ -455,30 +483,34 @@ def transformacion_digital_report_result(request):
     """Resultados del reporte de transformación digital"""
     try:
         # Importar modelos de diagnóstico
+        from .forms import TransformacionDigitalReportForm
         from diagnostico.models import Diagnostico, Indicador
 
         # Obtener parámetros del formulario
-        departamento = request.GET.get('departamento', '')
-        fecha_inicio = request.GET.get('fecha_inicio', '')
-        fecha_fin = request.GET.get('fecha_fin', '')
-        formato = request.GET.get('formato', 'html')
+        form = TransformacionDigitalReportForm(request.GET)
 
         # Filtrar diagnósticos
         diagnosticos = Diagnostico.objects.all().select_related(
             'departamento', 'cuestionario', 'responsable')
 
-        if departamento:
-            diagnosticos = diagnosticos.filter(departamento_id=departamento)
+        if form.is_valid():
+            departamento = form.cleaned_data.get('departamento')
+            fecha_inicio = form.cleaned_data.get('fecha_inicio')
+            fecha_fin = form.cleaned_data.get('fecha_fin')
+            formato = form.cleaned_data.get('formato', 'html')
 
-        if fecha_inicio:
-            diagnosticos = diagnosticos.filter(fecha__gte=fecha_inicio)
+            if departamento:
+                diagnosticos = diagnosticos.filter(departamento=departamento)
 
-        if fecha_fin:
-            diagnosticos = diagnosticos.filter(fecha__lte=fecha_fin)
+            if fecha_inicio:
+                diagnosticos = diagnosticos.filter(fecha__gte=fecha_inicio)
 
-        # Si el formato es diferente de HTML, exportar
-        if formato != 'html':
-            return export_diagnostico(request, diagnosticos, formato)
+            if fecha_fin:
+                diagnosticos = diagnosticos.filter(fecha__lte=fecha_fin)
+
+            # Si el formato es diferente de HTML, exportar
+            if formato != 'html':
+                return export_diagnostico(request, formato)
 
         # Calcular nivel general
         nivel_general = diagnosticos.aggregate(Avg('nivel_general'))[
@@ -496,24 +528,11 @@ def transformacion_digital_report_result(request):
                     'nivel': nivel_dept
                 })
 
-        # Para HTML, preparar contexto
-        departamentos = Departamento.objects.all()
-
         context = {
             'diagnosticos': diagnosticos,
             'nivel_general': nivel_general,
             'indicadores_por_departamento': indicadores_por_departamento,
-            'form': {
-                'departamento': {'value': departamento},
-                'fecha_inicio': {'value': fecha_inicio},
-                'fecha_fin': {'value': fecha_fin},
-                'formato': {'value': formato},
-                'fields': {
-                    'departamento': {
-                        'queryset': departamentos
-                    }
-                }
-            }
+            'form': form
         }
 
         return render(request, 'reportes/transformacion_digital_report_result.html', context)
@@ -526,10 +545,35 @@ def transformacion_digital_report_result(request):
 
 
 # Funciones de exportación
-
-def export_inventario(request, activos, formato):
+@login_required
+def export_inventario(request, format):
     """Exportar reporte de inventario a diferentes formatos"""
-    if formato == 'csv':
+    # Obtener los mismos filtros que se usaron en el reporte
+    tipo = request.GET.get('tipo', '')
+    departamento = request.GET.get('departamento', '')
+    estado = request.GET.get('estado', '')
+    fecha_inicio = request.GET.get('fecha_inicio', '')
+    fecha_fin = request.GET.get('fecha_fin', '')
+
+    # Filtrar activos
+    activos = Activo.objects.all().select_related('departamento')
+
+    if tipo:
+        activos = activos.filter(tipo=tipo)
+
+    if departamento:
+        activos = activos.filter(departamento_id=departamento)
+
+    if estado:
+        activos = activos.filter(estado=estado)
+
+    if fecha_inicio:
+        activos = activos.filter(fecha_adquisicion__gte=fecha_inicio)
+
+    if fecha_fin:
+        activos = activos.filter(fecha_adquisicion__lte=fecha_fin)
+
+    if format == 'csv':
         # Crear respuesta CSV
         response = HttpResponse(content_type='text/csv')
         response['Content-Disposition'] = 'attachment; filename="inventario.csv"'
@@ -551,7 +595,7 @@ def export_inventario(request, activos, formato):
 
         return response
 
-    elif formato == 'excel' and xlsxwriter:
+    elif format == 'excel' and xlsxwriter:
         # Crear respuesta Excel
         output = BytesIO()
         workbook = xlsxwriter.Workbook(output)
@@ -588,7 +632,7 @@ def export_inventario(request, activos, formato):
         response['Content-Disposition'] = 'attachment; filename="inventario.xlsx"'
         return response
 
-    elif formato == 'pdf' and reportlab:
+    elif format == 'pdf' and reportlab:
         # Crear respuesta PDF
         response = HttpResponse(content_type='application/pdf')
         response['Content-Disposition'] = 'attachment; filename="inventario.pdf"'
@@ -646,9 +690,36 @@ def export_inventario(request, activos, formato):
         return redirect('inventario_report_result')
 
 
-def export_mantenimiento(request, mantenimientos, formato):
+@login_required
+def export_mantenimiento(request, format):
     """Exportar reporte de mantenimientos a diferentes formatos"""
-    if formato == 'csv':
+    # Obtener los mismos filtros que se usaron en el reporte
+    tipo = request.GET.get('tipo', '')
+    estado = request.GET.get('estado', '')
+    responsable = request.GET.get('responsable', '')
+    fecha_inicio = request.GET.get('fecha_inicio', '')
+    fecha_fin = request.GET.get('fecha_fin', '')
+
+    # Filtrar mantenimientos
+    mantenimientos = Mantenimiento.objects.all().select_related('activo', 'responsable')
+
+    if tipo:
+        mantenimientos = mantenimientos.filter(tipo=tipo)
+
+    if estado:
+        mantenimientos = mantenimientos.filter(estado=estado)
+
+    if responsable:
+        mantenimientos = mantenimientos.filter(responsable_id=responsable)
+
+    if fecha_inicio:
+        mantenimientos = mantenimientos.filter(
+            fecha_programada__gte=fecha_inicio)
+
+    if fecha_fin:
+        mantenimientos = mantenimientos.filter(fecha_programada__lte=fecha_fin)
+
+    if format == 'csv':
         # Crear respuesta CSV
         response = HttpResponse(content_type='text/csv')
         response['Content-Disposition'] = 'attachment; filename="mantenimientos.csv"'
@@ -671,23 +742,282 @@ def export_mantenimiento(request, mantenimientos, formato):
 
         return response
 
-    elif formato == 'excel' and xlsxwriter:
-        # Implementación similar a export_inventario pero para mantenimientos
-        # ...
-        return HttpResponse("Exportación a Excel no implementada")
+    elif format == 'excel' and xlsxwriter:
+        # Crear respuesta Excel
+        output = BytesIO()
+        workbook = xlsxwriter.Workbook(output)
+        worksheet = workbook.add_worksheet()
 
-    elif formato == 'pdf' and reportlab:
-        # Implementación similar a export_inventario pero para mantenimientos
-        # ...
-        return HttpResponse("Exportación a PDF no implementada")
+        # Formato para encabezados
+        header_format = workbook.add_format(
+            {'bold': True, 'bg_color': '#4e73df', 'color': 'white'})
+
+        # Escribir encabezados
+        headers = ['ID', 'Activo', 'Tipo', 'Fecha Programada',
+                   'Fecha Realización', 'Responsable', 'Estado', 'Costo']
+        for col_num, header in enumerate(headers):
+            worksheet.write(0, col_num, header, header_format)
+
+        # Escribir datos
+        for row_num, mant in enumerate(mantenimientos, 1):
+            worksheet.write(row_num, 0, mant.id)
+            worksheet.write(row_num, 1, mant.activo.nombre)
+            worksheet.write(row_num, 2, mant.get_tipo_display())
+            worksheet.write(
+                row_num, 3, mant.fecha_programada.strftime('%Y-%m-%d'))
+            worksheet.write(row_num, 4, mant.fecha_realizacion.strftime(
+                '%Y-%m-%d') if mant.fecha_realizacion else 'Pendiente')
+            worksheet.write(
+                row_num, 5, mant.responsable.get_full_name() if mant.responsable else '')
+            worksheet.write(row_num, 6, mant.get_estado_display())
+            worksheet.write(row_num, 7, float(
+                mant.costo) if mant.costo else 0.0)
+
+        workbook.close()
+        output.seek(0)
+
+        response = HttpResponse(
+            output.read(),
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+        response['Content-Disposition'] = 'attachment; filename="mantenimientos.xlsx"'
+        return response
+
+    elif format == 'pdf' and reportlab:
+        # Crear respuesta PDF
+        response = HttpResponse(content_type='application/pdf')
+        response['Content-Disposition'] = 'attachment; filename="mantenimientos.pdf"'
+
+        buffer = BytesIO()
+        doc = SimpleDocTemplate(buffer, pagesize=letter)
+        elements = []
+
+        # Estilos
+        styles = getSampleStyleSheet()
+        title_style = styles['Heading1']
+
+        # Título
+        elements.append(Paragraph("Reporte de Mantenimientos", title_style))
+        elements.append(Spacer(1, 12))
+
+        # Datos para la tabla
+        data = [['ID', 'Activo', 'Tipo', 'Fecha Prog.',
+                 'Fecha Real.', 'Responsable', 'Estado']]
+
+        for mant in mantenimientos:
+            data.append([
+                str(mant.id),
+                mant.activo.nombre,
+                mant.get_tipo_display(),
+                mant.fecha_programada.strftime('%Y-%m-%d'),
+                mant.fecha_realizacion.strftime(
+                    '%Y-%m-%d') if mant.fecha_realizacion else 'Pendiente',
+                mant.responsable.get_full_name() if mant.responsable else '',
+                mant.get_estado_display()
+            ])
+
+        # Crear tabla
+        table = Table(data)
+        table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.blue),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+            ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+            ('GRID', (0, 0), (-1, -1), 1, colors.black)
+        ]))
+
+        elements.append(table)
+
+        # Construir PDF
+        doc.build(elements)
+        pdf = buffer.getvalue()
+        buffer.close()
+
+        response.write(pdf)
+        return response
 
     else:
         # Si no se pudo exportar, redirigir al reporte HTML
         return redirect('mantenimiento_report_result')
 
 
-def export_diagnostico(request, diagnosticos, formato):
+@login_required
+def export_diagnostico(request, format):
     """Exportar reporte de diagnóstico a diferentes formatos"""
-    # Implementación similar a export_inventario pero para diagnósticos
-    # ...
-    return HttpResponse(f"Exportación a {formato} no implementada")
+    try:
+        from diagnostico.models import Diagnostico, Indicador
+
+        # Obtener los mismos filtros que se usaron en el reporte
+        departamento = request.GET.get('departamento', '')
+        fecha_inicio = request.GET.get('fecha_inicio', '')
+        fecha_fin = request.GET.get('fecha_fin', '')
+
+        # Filtrar diagnósticos
+        diagnosticos = Diagnostico.objects.all().select_related(
+            'departamento', 'cuestionario', 'responsable')
+
+        if departamento:
+            diagnosticos = diagnosticos.filter(departamento_id=departamento)
+
+        if fecha_inicio:
+            diagnosticos = diagnosticos.filter(fecha__gte=fecha_inicio)
+
+        if fecha_fin:
+            diagnosticos = diagnosticos.filter(fecha__lte=fecha_fin)
+
+        if format == 'csv':
+            # Crear respuesta CSV
+            response = HttpResponse(content_type='text/csv')
+            response['Content-Disposition'] = 'attachment; filename="diagnostico.csv"'
+
+            writer = csv.writer(response)
+            writer.writerow(['ID', 'Departamento', 'Cuestionario', 'Fecha',
+                            'Responsable', 'Nivel General'])
+
+            for diag in diagnosticos:
+                writer.writerow([
+                    diag.id,
+                    diag.departamento.nombre,
+                    diag.cuestionario.titulo,
+                    diag.fecha.strftime('%Y-%m-%d %H:%M'),
+                    diag.responsable.get_full_name() if diag.responsable else '',
+                    diag.nivel_general or 0
+                ])
+
+            return response
+
+        elif format == 'excel' and xlsxwriter:
+            # Crear respuesta Excel
+            output = BytesIO()
+            workbook = xlsxwriter.Workbook(output)
+            worksheet = workbook.add_worksheet('Diagnósticos')
+
+            # Formato para encabezados
+            header_format = workbook.add_format(
+                {'bold': True, 'bg_color': '#4e73df', 'color': 'white'})
+
+            # Escribir encabezados
+            headers = ['ID', 'Departamento', 'Cuestionario', 'Fecha',
+                       'Responsable', 'Nivel General']
+            for col_num, header in enumerate(headers):
+                worksheet.write(0, col_num, header, header_format)
+
+            # Escribir datos de diagnósticos
+            for row_num, diag in enumerate(diagnosticos, 1):
+                worksheet.write(row_num, 0, diag.id)
+                worksheet.write(row_num, 1, diag.departamento.nombre)
+                worksheet.write(row_num, 2, diag.cuestionario.titulo)
+                worksheet.write(
+                    row_num, 3, diag.fecha.strftime('%Y-%m-%d %H:%M'))
+                worksheet.write(
+                    row_num, 4, diag.responsable.get_full_name() if diag.responsable else '')
+                worksheet.write(row_num, 5, float(
+                    diag.nivel_general) if diag.nivel_general else 0)
+
+            # Crear hoja para indicadores
+            if diagnosticos.exists():
+                worksheet_ind = workbook.add_worksheet('Indicadores')
+
+                # Encabezados para indicadores
+                ind_headers = ['Departamento', 'Diagnóstico ID',
+                               'Nombre', 'Valor', 'Descripción']
+                for col_num, header in enumerate(ind_headers):
+                    worksheet_ind.write(0, col_num, header, header_format)
+
+                # Obtener indicadores
+                row_num = 1
+                for diag in diagnosticos:
+                    indicadores = Indicador.objects.filter(diagnostico=diag)
+                    for ind in indicadores:
+                        worksheet_ind.write(
+                            row_num, 0, diag.departamento.nombre)
+                        worksheet_ind.write(row_num, 1, diag.id)
+                        worksheet_ind.write(row_num, 2, ind.nombre)
+                        worksheet_ind.write(row_num, 3, float(
+                            ind.valor) if ind.valor else 0)
+                        worksheet_ind.write(row_num, 4, ind.descripcion or '')
+                        row_num += 1
+
+            workbook.close()
+            output.seek(0)
+
+            response = HttpResponse(
+                output.read(),
+                content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+            )
+            response['Content-Disposition'] = 'attachment; filename="diagnostico.xlsx"'
+            return response
+
+        elif format == 'pdf' and reportlab:
+            # Crear respuesta PDF
+            response = HttpResponse(content_type='application/pdf')
+            response['Content-Disposition'] = 'attachment; filename="diagnostico.pdf"'
+
+            buffer = BytesIO()
+            doc = SimpleDocTemplate(buffer, pagesize=letter)
+            elements = []
+
+            # Estilos
+            styles = getSampleStyleSheet()
+            title_style = styles['Heading1']
+            subtitle_style = styles['Heading2']
+
+            # Título
+            elements.append(
+                Paragraph("Reporte de Transformación Digital", title_style))
+            elements.append(Spacer(1, 12))
+
+            # Datos para la tabla de diagnósticos
+            elements.append(Paragraph("Diagnósticos", subtitle_style))
+            elements.append(Spacer(1, 6))
+
+            data = [['ID', 'Departamento', 'Cuestionario', 'Fecha', 'Nivel']]
+
+            for diag in diagnosticos:
+                data.append([
+                    str(diag.id),
+                    diag.departamento.nombre,
+                    diag.cuestionario.titulo,
+                    diag.fecha.strftime('%Y-%m-%d'),
+                    str(diag.nivel_general or 0)
+                ])
+
+            # Crear tabla
+            table = Table(data)
+            table.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (-1, 0), colors.blue),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+                ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+                ('GRID', (0, 0), (-1, -1), 1, colors.black)
+            ]))
+
+            elements.append(table)
+            elements.append(Spacer(1, 12))
+
+            # Calcular nivel general
+            nivel_general = diagnosticos.aggregate(Avg('nivel_general'))[
+                'nivel_general__avg'] or 0
+
+            elements.append(
+                Paragraph(f"Nivel General: {nivel_general:.2f}/5", subtitle_style))
+
+            # Construir PDF
+            doc.build(elements)
+            pdf = buffer.getvalue()
+            buffer.close()
+
+            response.write(pdf)
+            return response
+
+        else:
+            # Si no se pudo exportar, redirigir al reporte HTML
+            return redirect('transformacion_digital_report_result')
+
+    except ImportError:
+        # Si no existe el módulo de diagnóstico
+        return redirect('transformacion_digital_report')

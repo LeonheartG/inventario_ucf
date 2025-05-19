@@ -241,4 +241,62 @@
                                     <li>Desarrollar un plan estratégico de transformación digital.</li>
                                     <li>Actualizar la infraestructura tecnológica básica.</li>
                                     <li>Capacitar al personal en competencias digitales básicas.</li>
-                                    <li>Implementar herramienta
+                                    <li>Implementar herramientas de colaboración digital.</li>
+                                    <li>Crear un comité de transformación digital con representantes de cada departamento.</li>
+                                </ul>
+                            {% elif nivel_general < 3 %}
+                                <p>La institución se encuentra en un <strong>nivel medio-bajo</strong> de transformación digital. Se han dado los primeros pasos, pero se requiere mayor avance para aprovechar los beneficios de la digitalización.</p>
+                                <hr>
+                                <p>Recomendaciones:</p>
+                                <ul>
+                                    <li>Fortalecer la infraestructura tecnológica existente.</li>
+                                    <li>Ampliar las capacitaciones en competencias digitales avanzadas.</li>
+                                    <li>Digitalizar procesos administrativos clave.</li>
+                                    <li>Desarrollar políticas de gestión de datos institucionales.</li>
+                                    <li>Implementar herramientas de analítica básica para la toma de decisiones.</li>
+                                </ul>
+                            {% elif nivel_general < 4 %}
+                                <p>La institución se encuentra en un <strong>nivel medio-alto</strong> de transformación digital. Hay avances significativos, pero se pueden optimizar algunos procesos y áreas.</p>
+                                <hr>
+                                <p>Recomendaciones:</p>
+                                <ul>
+                                    <li>Integrar los sistemas digitales existentes para mejorar la interoperabilidad.</li>
+                                    <li>Implementar soluciones de analítica avanzada e inteligencia artificial en áreas clave.</li>
+                                    <li>Desarrollar una cultura digital más profunda en toda la institución.</li>
+                                    <li>Optimizar la experiencia digital del estudiante.</li>
+                                    <li>Crear programas de innovación digital con participación de estudiantes y docentes.</li>
+                                </ul>
+                            {% else %}
+                                <p>La institución se encuentra en un <strong>nivel alto</strong> de transformación digital. Cuenta con una estrategia sólida y procesos digitalizados eficientes.</p>
+                                <hr>
+                                <p>Recomendaciones para mantenimiento y mejora continua:</p>
+                                <ul>
+                                    <li>Mantener actualizadas las tecnologías implementadas.</li>
+                                    <li>Continuar con la innovación digital en todos los ámbitos.</li>
+                                    <li>Compartir buenas prácticas con otras instituciones.</li>
+                                    <li>Explorar tecnologías emergentes que puedan agregar valor.</li>
+                                    <li>Reforzar las políticas de ciberseguridad y protección de datos.</li>
+                                </ul>
+                            {% endif %}
+                        </div>
+                    {% else %}
+                        <div class="alert alert-info">
+                            <p>No hay datos suficientes para generar recomendaciones. Realice evaluaciones de transformación digital para obtener recomendaciones personalizadas.</p>
+                        </div>
+                    {% endif %}
+                    
+                    <div class="text-center mt-4">
+                        <a href="{% url 'evaluacion_new' %}" class="btn btn-primary">
+                            <i class="fas fa-plus"></i> Nueva Evaluación
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+{% endblock %}

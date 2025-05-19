@@ -167,3 +167,38 @@
                                 {% else %}
                                     <tr>
                                         <td colspan="3" class="text-center">No hay datos disponibles</td>
+                                    </tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sección adicional para locales si aplica -->
+    {% if departamento_id %}
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold">Locales del Departamento</h6>
+                </div>
+                <div class="card-body">
+                    <!-- Esta sección podría llenarse con un query adicional en la vista -->
+                    <div class="alert alert-info">
+                        Para visualizar los locales asignados a este departamento, visite el 
+                        <a href="{% url 'local_list' %}?departamento={{ departamento_id }}" class="alert-link">módulo de locales</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+{% endblock %}

@@ -2,41 +2,107 @@
 
 {% block title %}Reportes - UCF{% endblock %}
 
+{% block extra_css %}
+<style>
+    .report-card {
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .report-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+    }
+    .report-icon {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+        color: var(--primary);
+    }
+    .report-description {
+        min-height: 50px;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="container">
     <div class="row mb-4">
         <div class="col-lg-12">
-            <h1 class="display-4">Reportes</h1>
-            <p class="lead">Genere reportes personalizados del sistema.</p>
+            <h1 class="display-4">Centro de Reportes</h1>
+            <p class="lead">Genere informes detallados y analice los datos del sistema.</p>
             <hr class="my-4">
+        </div>
+    </div>
+    
+    <div class="row mb-5">
+        <div class="col-lg-12">
+            <div class="card shadow">
+                <div class="card-header py-3 bg-primary text-white">
+                    <h6 class="m-0 font-weight-bold">Dashboard General</h6>
+                </div>
+                <div class="card-body text-center p-5">
+                    <i class="fas fa-chart-pie report-icon"></i>
+                    <h5 class="mb-3">Panel de Control Integrado</h5>
+                    <p class="mb-4">Visualice indicadores clave, gráficos y tendencias de todo el sistema en un solo lugar.</p>
+                    <a href="{% url 'reportes_dashboard' %}" class="btn btn-primary btn-lg">
+                        <i class="fas fa-tachometer-alt"></i> Acceder al Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row mb-4">
+        <div class="col-lg-12">
+            <h2>Reportes Disponibles</h2>
+            <hr>
         </div>
     </div>
     
     <div class="row">
         <div class="col-md-4 mb-4">
-            <div class="card h-100 shadow-sm">
-                <div class="card-body text-center">
+            <div class="card h-100 shadow-sm report-card">
+                <div class="card-body text-center p-4">
+                    <i class="fas fa-boxes report-icon"></i>
                     <h5 class="card-title">Inventario</h5>
-                    <p class="card-text">Reportes generales de inventario.</p>
-                    <a href="{% url 'inventario_report' %}" class="btn btn-primary">Generar</a>
+                    <p class="card-text report-description">Genere reportes detallados del inventario con múltiples opciones de filtrado.</p>
+                    <div class="d-grid gap-2 mt-4">
+                        <a href="{% url 'inventario_report' %}" class="btn btn-primary">Generar Reporte</a>
+                        <div class="dropdown mt-2">
+                            <button class="btn btn-outline-secondary dropdown-toggle w-100" type="button" id="dropdownMenuButton1" data-bs-toggle="dropdown" aria-expanded="false">
+                                Reportes Específicos
+                            </button>
+                            <ul class="dropdown-menu w-100" aria-labelledby="dropdownMenuButton1">
+                                <li><a class="dropdown-item" href="{% url 'inventario_categoria_report' %}">Por Categoría</a></li>
+                                <li><a class="dropdown-item" href="{% url 'inventario_ubicacion_report' %}">Por Ubicación</a></li>
+                                <li><a class="dropdown-item" href="{% url 'obsolescencia_report' %}">Obsolescencia</a></li>
+                            </ul>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
+        
         <div class="col-md-4 mb-4">
-            <div class="card h-100 shadow-sm">
-                <div class="card-body text-center">
+            <div class="card h-100 shadow-sm report-card">
+                <div class="card-body text-center p-4">
+                    <i class="fas fa-tools report-icon"></i>
                     <h5 class="card-title">Mantenimiento</h5>
-                    <p class="card-text">Reportes de mantenimientos realizados y programados.</p>
-                    <a href="{% url 'mantenimiento_report' %}" class="btn btn-primary">Generar</a>
+                    <p class="card-text report-description">Genere reportes de mantenimientos realizados, programados y su estado actual.</p>
+                    <div class="d-grid gap-2 mt-4">
+                        <a href="{% url 'mantenimiento_report' %}" class="btn btn-primary">Generar Reporte</a>
+                    </div>
                 </div>
             </div>
         </div>
+        
         <div class="col-md-4 mb-4">
-            <div class="card h-100 shadow-sm">
-                <div class="card-body text-center">
+            <div class="card h-100 shadow-sm report-card">
+                <div class="card-body text-center p-4">
+                    <i class="fas fa-digital-tachograph report-icon"></i>
                     <h5 class="card-title">Transformación Digital</h5>
-                    <p class="card-text">Reportes de diagnóstico de transformación digital.</p>
-                    <a href="{% url 'transformacion_digital_report' %}" class="btn btn-primary">Generar</a>
+                    <p class="card-text report-description">Analice el nivel de transformación digital de la institución y obtenga recomendaciones.</p>
+                    <div class="d-grid gap-2 mt-4">
+                        <a href="{% url 'transformacion_digital_report' %}" class="btn btn-primary">Generar Reporte</a>
+                    </div>
                 </div>
             </div>
         </div>
@@ -46,14 +112,51 @@
         <div class="col-lg-12">
             <div class="card shadow">
                 <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold text-primary">Dashboard</h6>
+                    <h6 class="m-0 font-weight-bold">Exportación de Datos</h6>
                 </div>
                 <div class="card-body">
-                    <p>Acceda al dashboard para visualizar gráficos y resúmenes.</p>
-                    <a href="{% url 'reportes_dashboard' %}" class="btn btn-primary">Ver Dashboard</a>
+                    <div class="row">
+                        <div class="col-md-8">
+                            <p>Todos los reportes pueden ser exportados en múltiples formatos para facilitar su distribución y análisis.</p>
+                            <p>Formatos disponibles:</p>
+                            <ul>
+                                <li><strong>HTML:</strong> Visualización interactiva en el navegador</li>
+                                <li><strong>PDF:</strong> Documento portable para impresión</li>
+                                <li><strong>CSV:</strong> Datos en formato tabular compatible con Excel</li>
+                                <li><strong>Excel:</strong> Hojas de cálculo nativas con formato</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-4 d-flex align-items-center justify-content-center">
+                            <div class="d-flex">
+                                <i class="fas fa-file-pdf fa-3x text-danger mx-2"></i>
+                                <i class="fas fa-file-csv fa-3x text-success mx-2"></i>
+                                <i class="fas fa-file-excel fa-3x text-primary mx-2"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row mt-4">
+        <div class="col-lg-12">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold">Reportes Programados</h6>
+                </div>
+                <div class="card-body">
+                    <p>Configure reportes para que se generen automáticamente y sean enviados periódicamente a las personas designadas.</p>
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i> Próximamente: Funcionalidad de programación de reportes automáticos.
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
 {% endblock %}
