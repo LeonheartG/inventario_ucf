@@ -2,9 +2,9 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from .models import Local, EquipamientoLocal
-from .forms import LocalForm, EquipamientoLocalForm
-from usuarios.models import LogActividad
+from .models import Local, Equipamiento
+from inventario.models import Hardware
+from usuarios.models import Departamento, LogActividad
 
 
 @login_required
@@ -12,7 +12,7 @@ def index(request):
     """Vista principal del módulo de locales"""
     return render(request, 'locales/index.html')
 
-# Local views
+# Vistas para Locales
 
 
 @login_required
@@ -24,7 +24,6 @@ def local_list(request):
     search = request.GET.get('search', '')
     tipo = request.GET.get('tipo', '')
     departamento = request.GET.get('departamento', '')
-    estado = request.GET.get('estado', '')
 
     if search:
         locales = locales.filter(nombre__icontains=search) | locales.filter(
@@ -36,53 +35,26 @@ def local_list(request):
     if departamento:
         locales = locales.filter(departamento_id=departamento)
 
-    if estado:
-        locales = locales.filter(estado=estado)
-
     return render(request, 'locales/local_list.html', {
         'locales': locales,
         'search': search,
         'tipo': tipo,
-        'departamento': departamento,
-        'estado': estado
+        'departamento': departamento
     })
-
-
-@login_required
-def local_create(request):
-    """Crear local"""
-    if request.method == 'POST':
-        form = LocalForm(request.POST, request.FILES)
-        if form.is_valid():
-            local = form.save()
-
-            # Registrar actividad
-            LogActividad.objects.create(
-                usuario=request.user,
-                accion=f"Creación de local: {local.nombre}",
-                detalles=f"Local tipo {local.get_tipo_display()} en {local.ubicacion}"
-            )
-
-            messages.success(request, 'Local registrado correctamente.')
-            return redirect('local_detail', pk=local.id)
-    else:
-        form = LocalForm()
-
-    return render(request, 'locales/local_form.html', {'form': form, 'is_new': True})
 
 
 @login_required
 def local_detail(request, pk):
     """Detalle de local"""
     local = get_object_or_404(Local, pk=pk)
-    equipamiento = EquipamientoLocal.objects.filter(
+    equipamiento = Equipamiento.objects.filter(
         local=local).select_related('hardware', 'hardware__activo')
 
     # Registrar actividad
     LogActividad.objects.create(
         usuario=request.user,
         accion=f"Consulta de local: {local.nombre}",
-        detalles=f"Local tipo {local.get_tipo_display()} en {local.ubicacion}"
+        detalles=f"Local tipo {local.get_tipo_display()}"
     )
 
     return render(request, 'locales/local_detail.html', {
@@ -92,28 +64,92 @@ def local_detail(request, pk):
 
 
 @login_required
+def local_create(request):
+    """Crear local con enfoque directo"""
+    if request.method == 'POST':
+        try:
+            # Crear local
+            local = Local(
+                nombre=request.POST.get('nombre'),
+                tipo=request.POST.get('tipo'),
+                capacidad=int(request.POST.get('capacidad', 0)),
+                ubicacion=request.POST.get('ubicacion'),
+                descripcion=request.POST.get('descripcion', ''),
+                estado=request.POST.get('estado'),
+                departamento_id=request.POST.get('departamento'),
+                notas=request.POST.get('notas', '')
+            )
+
+            if 'imagen' in request.FILES:
+                local.imagen = request.FILES['imagen']
+
+            local.save()
+
+            # Registrar actividad
+            LogActividad.objects.create(
+                usuario=request.user,
+                accion=f"Creación de local: {local.nombre}",
+                detalles=f"Local tipo {local.get_tipo_display()}"
+            )
+
+            messages.success(request, 'Local registrado correctamente.')
+            return redirect('local_detail', pk=local.id)
+        except Exception as e:
+            print(f"Error al crear local: {str(e)}")
+            messages.error(request, f'Error al crear local: {str(e)}')
+
+    # Si es GET o si hubo un error en POST
+    departamentos = Departamento.objects.all()
+
+    return render(request, 'locales/local_form.html', {
+        'departamentos': departamentos,
+        'is_new': True
+    })
+
+
+@login_required
 def local_update(request, pk):
-    """Actualizar local"""
+    """Actualizar local con enfoque directo"""
     local = get_object_or_404(Local, pk=pk)
 
     if request.method == 'POST':
-        form = LocalForm(request.POST, request.FILES, instance=local)
-        if form.is_valid():
-            local = form.save()
+        try:
+            # Actualizar local
+            local.nombre = request.POST.get('nombre')
+            local.tipo = request.POST.get('tipo')
+            local.capacidad = int(request.POST.get('capacidad', 0))
+            local.ubicacion = request.POST.get('ubicacion')
+            local.descripcion = request.POST.get('descripcion', '')
+            local.estado = request.POST.get('estado')
+            local.departamento_id = request.POST.get('departamento')
+            local.notas = request.POST.get('notas', '')
+
+            if 'imagen' in request.FILES:
+                local.imagen = request.FILES['imagen']
+
+            local.save()
 
             # Registrar actividad
             LogActividad.objects.create(
                 usuario=request.user,
                 accion=f"Actualización de local: {local.nombre}",
-                detalles=f"Local tipo {local.get_tipo_display()} en {local.ubicacion}"
+                detalles=f"Local tipo {local.get_tipo_display()}"
             )
 
             messages.success(request, 'Local actualizado correctamente.')
             return redirect('local_detail', pk=local.id)
-    else:
-        form = LocalForm(instance=local)
+        except Exception as e:
+            print(f"Error al actualizar local: {str(e)}")
+            messages.error(request, f'Error al actualizar local: {str(e)}')
 
-    return render(request, 'locales/local_form.html', {'form': form, 'local': local, 'is_new': False})
+    # Si es GET o si hubo un error en POST
+    departamentos = Departamento.objects.all()
+
+    return render(request, 'locales/local_form.html', {
+        'local': local,
+        'departamentos': departamentos,
+        'is_new': False
+    })
 
 
 @login_required
@@ -122,30 +158,31 @@ def local_delete(request, pk):
     local = get_object_or_404(Local, pk=pk)
 
     if request.method == 'POST':
-        nombre = local.nombre
+        local_nombre = local.nombre
+        local_id = local.id
 
-        # Eliminar el local
+        # Eliminar local
         local.delete()
 
         # Registrar actividad
         LogActividad.objects.create(
             usuario=request.user,
-            accion=f"Eliminación de local: {nombre}",
-            detalles=f"ID: {pk}"
+            accion=f"Eliminación de local: {local_nombre}",
+            detalles=f"ID de local: {local_id}"
         )
 
-        messages.success(request, f'Local "{nombre}" eliminado correctamente.')
+        messages.success(request, 'Local eliminado correctamente.')
         return redirect('local_list')
 
     return render(request, 'locales/local_confirm_delete.html', {'local': local})
 
-# Equipamiento views
+# Vistas para Equipamiento
 
 
 @login_required
 def equipamiento_list(request):
-    """Lista de equipamientos"""
-    equipamiento = EquipamientoLocal.objects.all().select_related(
+    """Lista de equipamiento"""
+    equipamiento = Equipamiento.objects.all().select_related(
         'local', 'hardware', 'hardware__activo')
 
     # Filtros
@@ -155,9 +192,9 @@ def equipamiento_list(request):
 
     if search:
         equipamiento = equipamiento.filter(
-            local__nombre__icontains=search
-        ) | equipamiento.filter(
             hardware__activo__nombre__icontains=search
+        ) | equipamiento.filter(
+            local__nombre__icontains=search
         )
 
     if local:
@@ -175,86 +212,132 @@ def equipamiento_list(request):
 
 
 @login_required
-def equipamiento_create(request):
-    """Crear equipamiento"""
-    if request.method == 'POST':
-        form = EquipamientoLocalForm(request.POST)
-        if form.is_valid():
-            equipamiento = form.save()
-
-            # Registrar actividad
-            LogActividad.objects.create(
-                usuario=request.user,
-                accion=f"Asignación de equipamiento a local",
-                detalles=f"Hardware '{equipamiento.hardware.activo.nombre}' asignado a local '{equipamiento.local.nombre}'"
-            )
-
-            messages.success(request, 'Equipamiento asignado correctamente.')
-            return redirect('equipamiento_detail', pk=equipamiento.id)
-    else:
-        form = EquipamientoLocalForm()
-
-    return render(request, 'locales/equipamiento_form.html', {'form': form, 'is_new': True})
-
-
-@login_required
 def equipamiento_detail(request, pk):
     """Detalle de equipamiento"""
-    equipamiento = get_object_or_404(EquipamientoLocal, pk=pk)
+    equipamiento = get_object_or_404(Equipamiento, pk=pk)
 
     # Registrar actividad
     LogActividad.objects.create(
         usuario=request.user,
-        accion=f"Consulta de equipamiento",
-        detalles=f"Hardware '{equipamiento.hardware.activo.nombre}' en local '{equipamiento.local.nombre}'"
+        accion=f"Consulta de equipamiento: {equipamiento.hardware.activo.nombre} en {equipamiento.local.nombre}",
+        detalles=f"Estado: {equipamiento.get_estado_display()}"
     )
 
     return render(request, 'locales/equipamiento_detail.html', {'equipamiento': equipamiento})
 
 
 @login_required
+def equipamiento_create(request):
+    """Asignar hardware a local con enfoque directo"""
+    if request.method == 'POST':
+        try:
+            # Verificar que el hardware no esté ya asignado a otro local
+            hardware_id = request.POST.get('hardware')
+            if Equipamiento.objects.filter(hardware_id=hardware_id).exists():
+                messages.error(
+                    request, 'Este hardware ya está asignado a otro local.')
+                locales = Local.objects.all()
+                hardware_disponible = Hardware.objects.exclude(
+                    asignaciones__isnull=False
+                ).select_related('activo')
+                return render(request, 'locales/equipamiento_form.html', {
+                    'locales': locales,
+                    'hardware_disponible': hardware_disponible,
+                    'is_new': True
+                })
+
+            # Crear equipamiento
+            equipamiento = Equipamiento(
+                local_id=request.POST.get('local'),
+                hardware_id=hardware_id,
+                estado=request.POST.get('estado'),
+                notas=request.POST.get('notas', '')
+            )
+
+            equipamiento.save()
+
+            # Registrar actividad
+            hardware = Hardware.objects.get(activo_id=hardware_id)
+            local = Local.objects.get(id=request.POST.get('local'))
+            LogActividad.objects.create(
+                usuario=request.user,
+                accion=f"Asignación de hardware a local: {hardware.activo.nombre} en {local.nombre}",
+                detalles=f"Estado: {equipamiento.get_estado_display()}"
+            )
+
+            messages.success(request, 'Equipamiento asignado correctamente.')
+            return redirect('equipamiento_detail', pk=equipamiento.id)
+        except Exception as e:
+            print(f"Error al asignar equipamiento: {str(e)}")
+            messages.error(request, f'Error al asignar equipamiento: {str(e)}')
+
+    # Si es GET o si hubo un error en POST
+    locales = Local.objects.all()
+    # Filtramos hardware que no está ya asignado
+    hardware_disponible = Hardware.objects.exclude(
+        asignaciones__isnull=False
+    ).select_related('activo')
+
+    return render(request, 'locales/equipamiento_form.html', {
+        'locales': locales,
+        'hardware_disponible': hardware_disponible,
+        'is_new': True
+    })
+
+
+@login_required
 def equipamiento_update(request, pk):
-    """Actualizar equipamiento"""
-    equipamiento = get_object_or_404(EquipamientoLocal, pk=pk)
+    """Actualizar equipamiento con enfoque directo"""
+    equipamiento = get_object_or_404(Equipamiento, pk=pk)
 
     if request.method == 'POST':
-        form = EquipamientoLocalForm(request.POST, instance=equipamiento)
-        if form.is_valid():
-            equipamiento = form.save()
+        try:
+            # Actualizar equipamiento
+            # No permitimos cambiar el hardware ni el local, solo el estado y las notas
+            equipamiento.estado = request.POST.get('estado')
+            equipamiento.notas = request.POST.get('notas', '')
+
+            equipamiento.save()
 
             # Registrar actividad
             LogActividad.objects.create(
                 usuario=request.user,
-                accion=f"Actualización de equipamiento",
-                detalles=f"Hardware '{equipamiento.hardware.activo.nombre}' en local '{equipamiento.local.nombre}'"
+                accion=f"Actualización de equipamiento: {equipamiento.hardware.activo.nombre} en {equipamiento.local.nombre}",
+                detalles=f"Estado: {equipamiento.get_estado_display()}"
             )
 
             messages.success(
                 request, 'Equipamiento actualizado correctamente.')
             return redirect('equipamiento_detail', pk=equipamiento.id)
-    else:
-        form = EquipamientoLocalForm(instance=equipamiento)
+        except Exception as e:
+            print(f"Error al actualizar equipamiento: {str(e)}")
+            messages.error(
+                request, f'Error al actualizar equipamiento: {str(e)}')
 
-    return render(request, 'locales/equipamiento_form.html', {'form': form, 'equipamiento': equipamiento, 'is_new': False})
+    # Si es GET o si hubo un error en POST
+    return render(request, 'locales/equipamiento_form.html', {
+        'equipamiento': equipamiento,
+        'is_new': False
+    })
 
 
 @login_required
 def equipamiento_delete(request, pk):
-    """Eliminar equipamiento"""
-    equipamiento = get_object_or_404(EquipamientoLocal, pk=pk)
+    """Eliminar equipamiento (des-asignar hardware de local)"""
+    equipamiento = get_object_or_404(Equipamiento, pk=pk)
 
     if request.method == 'POST':
         hardware_nombre = equipamiento.hardware.activo.nombre
         local_nombre = equipamiento.local.nombre
 
-        # Eliminar el equipamiento
+        # Eliminar equipamiento
         equipamiento.delete()
 
         # Registrar actividad
         LogActividad.objects.create(
             usuario=request.user,
-            accion=f"Eliminación de equipamiento",
-            detalles=f"Hardware '{hardware_nombre}' del local '{local_nombre}'"
+            accion=f"Des-asignación de hardware de local: {hardware_nombre} de {local_nombre}",
+            detalles=f"Hardware liberado para asignación"
         )
 
         messages.success(request, 'Equipamiento eliminado correctamente.')

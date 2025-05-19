@@ -2,6 +2,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from django.contrib.auth.models import User
 from .models import Activo, Hardware, Software, Mantenimiento, Proveedor
 from .forms import HardwareForm, SoftwareForm
 from usuarios.models import LogActividad
@@ -93,7 +94,7 @@ def hardware_create(request):
 
             hardware.save()
 
-            # Registrar actividad
+            # Registrar Actividad
             LogActividad.objects.create(
                 usuario=request.user,
                 accion=f"Creación de hardware: {activo.nombre}",
@@ -239,32 +240,60 @@ def software_list(request):
 
 @login_required
 def software_create(request):
-    """Crear software"""
+    """Crear software con enfoque directo"""
     if request.method == 'POST':
-        form = SoftwareForm(request.POST, request.FILES)
-        if form.is_valid():
-            try:
-                software = form.save(user=request.user)
+        try:
+            # Crear activo
+            activo = Activo.objects.create(
+                tipo='software',
+                nombre=request.POST.get('nombre'),
+                descripcion=request.POST.get('descripcion', ''),
+                fecha_adquisicion=request.POST.get('fecha_adquisicion'),
+                valor_adquisicion=request.POST.get('valor_adquisicion'),
+                estado=request.POST.get('estado'),
+                departamento_id=request.POST.get('departamento'),
+                ubicacion=request.POST.get('ubicacion', ''),
+                creado_por=request.user,
+                actualizado_por=request.user
+            )
 
-                # Registrar actividad
-                LogActividad.objects.create(
-                    usuario=request.user,
-                    accion=f"Creación de software: {software.activo.nombre}",
-                    detalles=f"Software versión {software.version} con licencia {software.get_tipo_licencia_display()}"
-                )
+            if 'imagen' in request.FILES:
+                activo.imagen = request.FILES['imagen']
+                activo.save()
 
-                messages.success(request, 'Software registrado correctamente.')
-                return redirect('software_detail', pk=software.activo_id)
-            except Exception as e:
-                messages.error(request, f'Error al guardar: {str(e)}')
-        else:
-            for field, errors in form.errors.items():
-                for error in errors:
-                    messages.error(
-                        request, f'Error en el campo {field}: {error}')
-    else:
-        form = SoftwareForm()
+            # Crear software
+            software = Software.objects.create(
+                activo=activo,
+                version=request.POST.get('version'),
+                tipo_licencia=request.POST.get('tipo_licencia'),
+                clave_activacion=request.POST.get('clave_activacion', ''),
+                numero_licencias=int(request.POST.get('numero_licencias', 1))
+            )
 
+            if request.POST.get('fecha_vencimiento'):
+                software.fecha_vencimiento = request.POST.get(
+                    'fecha_vencimiento')
+
+            if request.POST.get('proveedor'):
+                software.proveedor_id = request.POST.get('proveedor')
+
+            software.save()
+
+            # Registrar actividad
+            LogActividad.objects.create(
+                usuario=request.user,
+                accion=f"Creación de software: {activo.nombre}",
+                detalles=f"Software versión {software.version} con licencia {software.get_tipo_licencia_display()}"
+            )
+
+            messages.success(request, 'Software registrado correctamente.')
+            return redirect('software_detail', pk=activo.id)
+        except Exception as e:
+            print(f"Error al crear software: {str(e)}")
+            messages.error(request, f'Error al crear software: {str(e)}')
+
+    # Si es GET o si hubo un error en POST
+    form = SoftwareForm()
     return render(request, 'inventario/software_form.html', {'form': form, 'is_new': True})
 
 
@@ -285,50 +314,77 @@ def software_detail(request, pk):
 
 @login_required
 def software_update(request, pk):
-    """Actualizar software"""
+    """Actualizar software con enfoque directo"""
     software = get_object_or_404(Software, activo_id=pk)
+    activo = software.activo
 
     if request.method == 'POST':
-        form = SoftwareForm(request.POST, request.FILES, instance=software)
-        if form.is_valid():
-            try:
-                software = form.save(user=request.user)
+        try:
+            # Actualizar activo
+            activo.nombre = request.POST.get('nombre')
+            activo.descripcion = request.POST.get('descripcion', '')
+            activo.fecha_adquisicion = request.POST.get('fecha_adquisicion')
+            activo.valor_adquisicion = request.POST.get('valor_adquisicion')
+            activo.estado = request.POST.get('estado')
+            activo.departamento_id = request.POST.get('departamento')
+            activo.ubicacion = request.POST.get('ubicacion', '')
+            activo.actualizado_por = request.user
 
-                # Registrar actividad
-                LogActividad.objects.create(
-                    usuario=request.user,
-                    accion=f"Actualización de software: {software.activo.nombre}",
-                    detalles=f"Software versión {software.version}"
-                )
+            if 'imagen' in request.FILES:
+                activo.imagen = request.FILES['imagen']
 
-                messages.success(
-                    request, 'Software actualizado correctamente.')
-                return redirect('software_detail', pk=software.activo_id)
-            except Exception as e:
-                messages.error(request, f'Error al guardar: {str(e)}')
-        else:
-            for field, errors in form.errors.items():
-                for error in errors:
-                    messages.error(
-                        request, f'Error en el campo {field}: {error}')
-    else:
-        # Inicializar el formulario con los datos del activo y software
-        initial_data = {
-            'nombre': software.activo.nombre,
-            'descripcion': software.activo.descripcion,
-            'fecha_adquisicion': software.activo.fecha_adquisicion,
-            'valor_adquisicion': software.activo.valor_adquisicion,
-            'estado': software.activo.estado,
-            'departamento': software.activo.departamento,
-            'ubicacion': software.activo.ubicacion,
-            'version': software.version,
-            'tipo_licencia': software.tipo_licencia,
-            'clave_activacion': software.clave_activacion,
-            'fecha_vencimiento': software.fecha_vencimiento,
-            'numero_licencias': software.numero_licencias,
-            'proveedor': software.proveedor
-        }
-        form = SoftwareForm(instance=software, initial=initial_data)
+            activo.save()
+
+            # Actualizar software
+            software.version = request.POST.get('version')
+            software.tipo_licencia = request.POST.get('tipo_licencia')
+            software.clave_activacion = request.POST.get(
+                'clave_activacion', '')
+            software.numero_licencias = int(
+                request.POST.get('numero_licencias', 1))
+
+            if request.POST.get('fecha_vencimiento'):
+                software.fecha_vencimiento = request.POST.get(
+                    'fecha_vencimiento')
+            else:
+                software.fecha_vencimiento = None
+
+            if request.POST.get('proveedor'):
+                software.proveedor_id = request.POST.get('proveedor')
+            else:
+                software.proveedor = None
+
+            software.save()
+
+            # Registrar actividad
+            LogActividad.objects.create(
+                usuario=request.user,
+                accion=f"Actualización de software: {activo.nombre}",
+                detalles=f"Software versión {software.version} con licencia {software.get_tipo_licencia_display()}"
+            )
+
+            messages.success(request, 'Software actualizado correctamente.')
+            return redirect('software_detail', pk=activo.id)
+        except Exception as e:
+            print(f"Error al actualizar software: {str(e)}")
+            messages.error(request, f'Error al actualizar software: {str(e)}')
+
+    # Si es GET o si hubo un error en POST
+    form = SoftwareForm(instance=software, initial={
+        'nombre': activo.nombre,
+        'descripcion': activo.descripcion,
+        'fecha_adquisicion': activo.fecha_adquisicion,
+        'valor_adquisicion': activo.valor_adquisicion,
+        'estado': activo.estado,
+        'departamento': activo.departamento,
+        'ubicacion': activo.ubicacion,
+        'version': software.version,
+        'tipo_licencia': software.tipo_licencia,
+        'clave_activacion': software.clave_activacion,
+        'fecha_vencimiento': software.fecha_vencimiento,
+        'numero_licencias': software.numero_licencias,
+        'proveedor': software.proveedor
+    })
 
     return render(request, 'inventario/software_form.html', {'form': form, 'software': software, 'is_new': False})
 
@@ -392,30 +448,159 @@ def mantenimiento_list(request):
 
 @login_required
 def mantenimiento_create(request):
-    """Crear mantenimiento"""
-    # Implementación simplificada
-    return render(request, 'inventario/mantenimiento_form.html')
+    """Crear mantenimiento con enfoque directo"""
+    if request.method == 'POST':
+        try:
+            # Obtener activo
+            activo_id = request.POST.get('activo')
+            if not activo_id:
+                messages.error(request, 'Debe seleccionar un activo.')
+                activos = Activo.objects.all()
+                return render(request, 'inventario/mantenimiento_form.html', {'activos': activos, 'is_new': True})
+
+            # Crear mantenimiento
+            mantenimiento = Mantenimiento(
+                activo_id=activo_id,
+                tipo=request.POST.get('tipo'),
+                fecha_programada=request.POST.get('fecha_programada'),
+                responsable=request.user,
+                descripcion=request.POST.get('descripcion', ''),
+                estado=request.POST.get('estado', 'programado'),
+                observaciones=request.POST.get('observaciones', '')
+            )
+
+            # Campos opcionales
+            if request.POST.get('fecha_realizacion'):
+                mantenimiento.fecha_realizacion = request.POST.get(
+                    'fecha_realizacion')
+
+            if request.POST.get('costo'):
+                mantenimiento.costo = request.POST.get('costo')
+
+            mantenimiento.save()
+
+            # Registrar actividad
+            activo_nombre = Activo.objects.get(id=activo_id).nombre
+            LogActividad.objects.create(
+                usuario=request.user,
+                accion=f"Creación de mantenimiento para: {activo_nombre}",
+                detalles=f"Mantenimiento {mantenimiento.get_tipo_display()}, programado para {mantenimiento.fecha_programada}"
+            )
+
+            messages.success(
+                request, 'Mantenimiento registrado correctamente.')
+            return redirect('mantenimiento_detail', pk=mantenimiento.id)
+        except Exception as e:
+            print(f"Error al crear mantenimiento: {str(e)}")
+            messages.error(request, f'Error al crear mantenimiento: {str(e)}')
+
+    # Si es GET o si hubo un error en POST
+    activos = Activo.objects.all()
+    usuarios = User.objects.all()
+
+    return render(request, 'inventario/mantenimiento_form.html', {
+        'activos': activos,
+        'usuarios': usuarios,
+        'is_new': True
+    })
 
 
 @login_required
 def mantenimiento_detail(request, pk):
     """Detalle de mantenimiento"""
-    # Implementación simplificada
     mantenimiento = get_object_or_404(Mantenimiento, pk=pk)
+
+    # Registrar actividad
+    LogActividad.objects.create(
+        usuario=request.user,
+        accion=f"Consulta de mantenimiento de: {mantenimiento.activo.nombre}",
+        detalles=f"Mantenimiento {mantenimiento.get_tipo_display()}, programado para {mantenimiento.fecha_programada}"
+    )
+
     return render(request, 'inventario/mantenimiento_detail.html', {'mantenimiento': mantenimiento})
 
 
 @login_required
 def mantenimiento_update(request, pk):
-    """Actualizar mantenimiento"""
-    # Implementación simplificada
+    """Actualizar mantenimiento con enfoque directo"""
     mantenimiento = get_object_or_404(Mantenimiento, pk=pk)
-    return render(request, 'inventario/mantenimiento_form.html', {'mantenimiento': mantenimiento})
+
+    if request.method == 'POST':
+        try:
+            # Actualizar mantenimiento
+            mantenimiento.tipo = request.POST.get('tipo')
+            mantenimiento.fecha_programada = request.POST.get(
+                'fecha_programada')
+
+            if request.POST.get('responsable'):
+                mantenimiento.responsable_id = request.POST.get('responsable')
+
+            mantenimiento.descripcion = request.POST.get('descripcion', '')
+            mantenimiento.estado = request.POST.get('estado')
+            mantenimiento.observaciones = request.POST.get('observaciones', '')
+
+            # Campos opcionales
+            if request.POST.get('fecha_realizacion'):
+                mantenimiento.fecha_realizacion = request.POST.get(
+                    'fecha_realizacion')
+            else:
+                mantenimiento.fecha_realizacion = None
+
+            if request.POST.get('costo'):
+                mantenimiento.costo = request.POST.get('costo')
+            else:
+                mantenimiento.costo = None
+
+            mantenimiento.save()
+
+            # Registrar actividad
+            LogActividad.objects.create(
+                usuario=request.user,
+                accion=f"Actualización de mantenimiento para: {mantenimiento.activo.nombre}",
+                detalles=f"Mantenimiento {mantenimiento.get_tipo_display()}, programado para {mantenimiento.fecha_programada}"
+            )
+
+            messages.success(
+                request, 'Mantenimiento actualizado correctamente.')
+            return redirect('mantenimiento_detail', pk=mantenimiento.id)
+        except Exception as e:
+            print(f"Error al actualizar mantenimiento: {str(e)}")
+            messages.error(
+                request, f'Error al actualizar mantenimiento: {str(e)}')
+
+    # Si es GET o si hubo un error en POST
+    activos = Activo.objects.all()
+    usuarios = User.objects.all()
+
+    return render(request, 'inventario/mantenimiento_form.html', {
+        'mantenimiento': mantenimiento,
+        'activos': activos,
+        'usuarios': usuarios,
+        'is_new': False
+    })
 
 
 @login_required
 def mantenimiento_delete(request, pk):
     """Eliminar mantenimiento"""
-    # Implementación simplificada
     mantenimiento = get_object_or_404(Mantenimiento, pk=pk)
+
+    if request.method == 'POST':
+        activo_nombre = mantenimiento.activo.nombre
+        mantenimiento_tipo = mantenimiento.get_tipo_display()
+        mantenimiento_id = mantenimiento.id
+
+        # Eliminar mantenimiento
+        mantenimiento.delete()
+
+        # Registrar actividad
+        LogActividad.objects.create(
+            usuario=request.user,
+            accion=f"Eliminación de mantenimiento para: {activo_nombre}",
+            detalles=f"ID de mantenimiento: {mantenimiento_id}, tipo: {mantenimiento_tipo}"
+        )
+
+        messages.success(request, 'Mantenimiento eliminado correctamente.')
+        return redirect('mantenimiento_list')
+
     return render(request, 'inventario/mantenimiento_confirm_delete.html', {'mantenimiento': mantenimiento})
