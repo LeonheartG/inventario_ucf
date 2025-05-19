@@ -1,4 +1,4 @@
-# Al principio del archivo inventario/views.py
+# inventario/views.py
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
@@ -54,35 +54,59 @@ def hardware_list(request):
 
 @login_required
 def hardware_create(request):
-    """Crear hardware"""
+    """Crear hardware simplificado"""
     if request.method == 'POST':
-        form = HardwareForm(request.POST, request.FILES)
-        if form.is_valid():
-            try:
-                hardware = form.save(user=request.user)
+        try:
+            # Crear directamente los objetos sin usar el formulario
+            activo = Activo.objects.create(
+                tipo='hardware',
+                nombre=request.POST.get('nombre'),
+                descripcion=request.POST.get('descripcion', ''),
+                fecha_adquisicion=request.POST.get('fecha_adquisicion'),
+                valor_adquisicion=request.POST.get('valor_adquisicion'),
+                estado=request.POST.get('estado'),
+                departamento_id=request.POST.get('departamento'),
+                ubicacion=request.POST.get('ubicacion', ''),
+                creado_por=request.user,
+                actualizado_por=request.user
+            )
 
-                # Registrar actividad
-                LogActividad.objects.create(
-                    usuario=request.user,
-                    accion=f"Creación de hardware: {hardware.activo.nombre}",
-                    detalles=f"Hardware {hardware.marca} {hardware.modelo} con número de serie {hardware.numero_serie}"
-                )
+            if 'imagen' in request.FILES:
+                activo.imagen = request.FILES['imagen']
+                activo.save()
 
-                messages.success(request, 'Hardware registrado correctamente.')
-                return redirect('hardware_detail', pk=hardware.activo_id)
-            except Exception as e:
-                # Capturar y mostrar errores específicos
-                messages.error(
-                    request, f'Error al guardar el hardware: {str(e)}')
-        else:
-            # Mostrar errores de validación del formulario
-            for field, errors in form.errors.items():
-                for error in errors:
-                    messages.error(
-                        request, f'Error en el campo {field}: {error}')
-    else:
-        form = HardwareForm()
+            hardware = Hardware.objects.create(
+                activo=activo,
+                marca=request.POST.get('marca'),
+                modelo=request.POST.get('modelo'),
+                numero_serie=request.POST.get('numero_serie'),
+                especificaciones=request.POST.get('especificaciones', ''),
+                periodicidad_mantenimiento=request.POST.get(
+                    'periodicidad_mantenimiento', 180)
+            )
 
+            if request.POST.get('fecha_garantia'):
+                hardware.fecha_garantia = request.POST.get('fecha_garantia')
+
+            if request.POST.get('proveedor'):
+                hardware.proveedor_id = request.POST.get('proveedor')
+
+            hardware.save()
+
+            # Registrar actividad
+            LogActividad.objects.create(
+                usuario=request.user,
+                accion=f"Creación de hardware: {activo.nombre}",
+                detalles=f"Hardware {hardware.marca} {hardware.modelo} con número de serie {hardware.numero_serie}"
+            )
+
+            messages.success(request, 'Hardware registrado correctamente.')
+            return redirect('hardware_detail', pk=activo.id)
+        except Exception as e:
+            messages.error(request, f'Error al crear hardware: {str(e)}')
+
+    # Si es GET o hubo un error, mostrar el formulario
+    form = HardwareForm()
     return render(request, 'inventario/hardware_form.html', {'form': form, 'is_new': True})
 
 
@@ -109,17 +133,26 @@ def hardware_update(request, pk):
     if request.method == 'POST':
         form = HardwareForm(request.POST, request.FILES, instance=hardware)
         if form.is_valid():
-            hardware = form.save(user=request.user)
+            try:
+                hardware = form.save(user=request.user)
 
-            # Registrar actividad
-            LogActividad.objects.create(
-                usuario=request.user,
-                accion=f"Actualización de hardware: {hardware.activo.nombre}",
-                detalles=f"Hardware {hardware.marca} {hardware.modelo} con número de serie {hardware.numero_serie}"
-            )
+                # Registrar actividad
+                LogActividad.objects.create(
+                    usuario=request.user,
+                    accion=f"Actualización de hardware: {hardware.activo.nombre}",
+                    detalles=f"Hardware {hardware.marca} {hardware.modelo} con número de serie {hardware.numero_serie}"
+                )
 
-            messages.success(request, 'Hardware actualizado correctamente.')
-            return redirect('hardware_detail', pk=hardware.activo_id)
+                messages.success(
+                    request, 'Hardware actualizado correctamente.')
+                return redirect('hardware_detail', pk=hardware.activo_id)
+            except Exception as e:
+                messages.error(request, f'Error al guardar: {str(e)}')
+        else:
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(
+                        request, f'Error en el campo {field}: {error}')
     else:
         # Inicializar el formulario con los datos del activo y hardware
         initial_data = {
@@ -210,17 +243,25 @@ def software_create(request):
     if request.method == 'POST':
         form = SoftwareForm(request.POST, request.FILES)
         if form.is_valid():
-            software = form.save(user=request.user)
+            try:
+                software = form.save(user=request.user)
 
-            # Registrar actividad
-            LogActividad.objects.create(
-                usuario=request.user,
-                accion=f"Creación de software: {software.activo.nombre}",
-                detalles=f"Software versión {software.version} con licencia {software.get_tipo_licencia_display()}"
-            )
+                # Registrar actividad
+                LogActividad.objects.create(
+                    usuario=request.user,
+                    accion=f"Creación de software: {software.activo.nombre}",
+                    detalles=f"Software versión {software.version} con licencia {software.get_tipo_licencia_display()}"
+                )
 
-            messages.success(request, 'Software registrado correctamente.')
-            return redirect('software_detail', pk=software.activo_id)
+                messages.success(request, 'Software registrado correctamente.')
+                return redirect('software_detail', pk=software.activo_id)
+            except Exception as e:
+                messages.error(request, f'Error al guardar: {str(e)}')
+        else:
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(
+                        request, f'Error en el campo {field}: {error}')
     else:
         form = SoftwareForm()
 
@@ -250,17 +291,26 @@ def software_update(request, pk):
     if request.method == 'POST':
         form = SoftwareForm(request.POST, request.FILES, instance=software)
         if form.is_valid():
-            software = form.save(user=request.user)
+            try:
+                software = form.save(user=request.user)
 
-            # Registrar actividad
-            LogActividad.objects.create(
-                usuario=request.user,
-                accion=f"Actualización de software: {software.activo.nombre}",
-                detalles=f"Software versión {software.version}"
-            )
+                # Registrar actividad
+                LogActividad.objects.create(
+                    usuario=request.user,
+                    accion=f"Actualización de software: {software.activo.nombre}",
+                    detalles=f"Software versión {software.version}"
+                )
 
-            messages.success(request, 'Software actualizado correctamente.')
-            return redirect('software_detail', pk=software.activo_id)
+                messages.success(
+                    request, 'Software actualizado correctamente.')
+                return redirect('software_detail', pk=software.activo_id)
+            except Exception as e:
+                messages.error(request, f'Error al guardar: {str(e)}')
+        else:
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(
+                        request, f'Error en el campo {field}: {error}')
     else:
         # Inicializar el formulario con los datos del activo y software
         initial_data = {

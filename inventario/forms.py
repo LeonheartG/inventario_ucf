@@ -1,138 +1,110 @@
 # inventario/forms.py
 from django import forms
 from .models import Activo, Hardware, Proveedor, Software
-from usuarios.models import Departamento
+from usuarios.models import Departamento, LogActividad
 
 
 class HardwareForm(forms.ModelForm):
-    nombre = forms.CharField(max_length=200, required=True, label='Nombre')
-    descripcion = forms.CharField(
-        widget=forms.Textarea, required=False, label='Descripción')
-    fecha_adquisicion = forms.DateField(widget=forms.DateInput(
-        attrs={'type': 'date'}), label='Fecha de adquisición')
-    valor_adquisicion = forms.DecimalField(
-        max_digits=10, decimal_places=2, label='Valor de adquisición')
-    estado = forms.ChoiceField(choices=Activo.ESTADO_CHOICES, label='Estado')
-    departamento = forms.ModelChoiceField(
-        queryset=Departamento.objects.all(), label='Departamento')
-    ubicacion = forms.CharField(
-        max_length=100, required=False, label='Ubicación')
-    imagen = forms.ImageField(required=False, label='Imagen')
+    nombre = forms.CharField(max_length=200, required=True)
+    descripcion = forms.CharField(widget=forms.Textarea, required=False)
+    fecha_adquisicion = forms.DateField(
+        widget=forms.DateInput(attrs={'type': 'date'}))
+    valor_adquisicion = forms.DecimalField(max_digits=10, decimal_places=2)
+    estado = forms.ChoiceField(choices=Activo.ESTADO_CHOICES)
+    departamento = forms.ModelChoiceField(queryset=Departamento.objects.all())
+    ubicacion = forms.CharField(max_length=100, required=False)
+    imagen = forms.ImageField(required=False)
 
-    marca = forms.CharField(max_length=100, required=True, label='Marca')
-    modelo = forms.CharField(max_length=100, required=True, label='Modelo')
-    numero_serie = forms.CharField(
-        max_length=100, required=True, label='Número de serie')
-    especificaciones = forms.CharField(
-        widget=forms.Textarea, required=False, label='Especificaciones')
+    marca = forms.CharField(max_length=100, required=True)
+    modelo = forms.CharField(max_length=100, required=True)
+    numero_serie = forms.CharField(max_length=100, required=True)
+    especificaciones = forms.CharField(widget=forms.Textarea, required=False)
     fecha_garantia = forms.DateField(widget=forms.DateInput(
-        attrs={'type': 'date'}), required=False, label='Fecha de garantía')
+        attrs={'type': 'date'}), required=False)
     proveedor = forms.ModelChoiceField(
-        queryset=Proveedor.objects.all(), required=True, label='Proveedor')
-    periodicidad_mantenimiento = forms.IntegerField(
-        initial=180, label='Periodicidad de mantenimiento (días)', required=True)
+        queryset=Proveedor.objects.all(), required=False)
+    periodicidad_mantenimiento = forms.IntegerField(initial=180)
 
     class Meta:
         model = Hardware
-        fields = []  # No usamos los campos del modelo directamente
+        fields = []
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        # Asegurarnos de que hay al menos un proveedor disponible
-        if not self.fields['proveedor'].queryset.exists():
-            # Crear un proveedor por defecto si no hay ninguno
-            proveedor, created = Proveedor.objects.get_or_create(
-                nombre="Proveedor General",
-                defaults={
-                    'telefono': '000-000-0000',
-                    'email': 'no-email@example.com'
-                }
-            )
-            # Actualizar el queryset
-            self.fields['proveedor'].queryset = Proveedor.objects.all()
-
-        # Establecer valores iniciales para campos obligatorios
-        if not self.initial.get('periodicidad_mantenimiento'):
-            self.initial['periodicidad_mantenimiento'] = 180
+    def clean(self):
+        cleaned_data = super().clean()
+        # Asegurarnos de que todos los campos requeridos estén presentes
+        print("En método clean - datos recibidos:", self.data)
+        print("Campos limpios hasta ahora:", cleaned_data)
+        return cleaned_data
 
     def save(self, commit=True, user=None):
-        try:
-            # Primero creamos o actualizamos el activo
-            activo_id = self.instance.activo_id if hasattr(
-                self.instance, 'activo_id') and self.instance.activo_id else None
+        print("Guardando con datos:", self.cleaned_data)
+        activo_id = self.instance.activo_id if hasattr(
+            self.instance, 'activo_id') and self.instance.activo_id else None
 
-            if activo_id:
-                activo = Activo.objects.get(id=activo_id)
-                activo.nombre = self.cleaned_data['nombre']
-                activo.descripcion = self.cleaned_data['descripcion']
-                activo.fecha_adquisicion = self.cleaned_data['fecha_adquisicion']
-                activo.valor_adquisicion = self.cleaned_data['valor_adquisicion']
-                activo.estado = self.cleaned_data['estado']
-                activo.departamento = self.cleaned_data['departamento']
-                activo.ubicacion = self.cleaned_data['ubicacion']
+        if activo_id:
+            # Actualizar activo existente
+            activo = Activo.objects.get(id=activo_id)
+            activo.nombre = self.cleaned_data['nombre']
+            activo.descripcion = self.cleaned_data.get('descripcion', '')
+            activo.fecha_adquisicion = self.cleaned_data['fecha_adquisicion']
+            activo.valor_adquisicion = self.cleaned_data['valor_adquisicion']
+            activo.estado = self.cleaned_data['estado']
+            activo.departamento = self.cleaned_data['departamento']
+            activo.ubicacion = self.cleaned_data.get('ubicacion', '')
 
-                if self.cleaned_data['imagen']:
-                    activo.imagen = self.cleaned_data['imagen']
+            if 'imagen' in self.cleaned_data and self.cleaned_data['imagen']:
+                activo.imagen = self.cleaned_data['imagen']
 
-                if user:
-                    activo.actualizado_por = user
+            if user:
+                activo.actualizado_por = user
 
+            activo.save()
+
+            # Actualizar hardware
+            hardware = self.instance
+            hardware.marca = self.cleaned_data['marca']
+            hardware.modelo = self.cleaned_data['modelo']
+            hardware.numero_serie = self.cleaned_data['numero_serie']
+            hardware.especificaciones = self.cleaned_data.get(
+                'especificaciones', '')
+            hardware.fecha_garantia = self.cleaned_data.get('fecha_garantia')
+            hardware.proveedor = self.cleaned_data.get('proveedor')
+            hardware.periodicidad_mantenimiento = self.cleaned_data.get(
+                'periodicidad_mantenimiento', 180)
+            hardware.save()
+        else:
+            # Crear nuevo activo
+            activo = Activo.objects.create(
+                tipo='hardware',
+                nombre=self.cleaned_data['nombre'],
+                descripcion=self.cleaned_data.get('descripcion', ''),
+                fecha_adquisicion=self.cleaned_data['fecha_adquisicion'],
+                valor_adquisicion=self.cleaned_data['valor_adquisicion'],
+                estado=self.cleaned_data['estado'],
+                departamento=self.cleaned_data['departamento'],
+                ubicacion=self.cleaned_data.get('ubicacion', ''),
+                creado_por=user,
+                actualizado_por=user
+            )
+
+            if 'imagen' in self.cleaned_data and self.cleaned_data['imagen']:
+                activo.imagen = self.cleaned_data['imagen']
                 activo.save()
-            else:
-                activo = Activo.objects.create(
-                    tipo='hardware',
-                    nombre=self.cleaned_data['nombre'],
-                    descripcion=self.cleaned_data['descripcion'],
-                    fecha_adquisicion=self.cleaned_data['fecha_adquisicion'],
-                    valor_adquisicion=self.cleaned_data['valor_adquisicion'],
-                    estado=self.cleaned_data['estado'],
-                    departamento=self.cleaned_data['departamento'],
-                    ubicacion=self.cleaned_data['ubicacion'],
-                    imagen=self.cleaned_data['imagen'] if self.cleaned_data['imagen'] else None,
-                    creado_por=user,
-                    actualizado_por=user
-                )
 
-            # Ahora creamos o actualizamos el hardware
-            try:
-                if activo_id:
-                    hardware = self.instance
-                    hardware.marca = self.cleaned_data['marca']
-                    hardware.modelo = self.cleaned_data['modelo']
-                    hardware.numero_serie = self.cleaned_data['numero_serie']
-                    hardware.especificaciones = self.cleaned_data['especificaciones']
-                    hardware.fecha_garantia = self.cleaned_data['fecha_garantia']
-                    hardware.proveedor = self.cleaned_data['proveedor']
-                    hardware.periodicidad_mantenimiento = self.cleaned_data[
-                        'periodicidad_mantenimiento']
-                    hardware.save()
-                else:
-                    hardware = Hardware.objects.create(
-                        activo=activo,
-                        marca=self.cleaned_data['marca'],
-                        modelo=self.cleaned_data['modelo'],
-                        numero_serie=self.cleaned_data['numero_serie'],
-                        especificaciones=self.cleaned_data['especificaciones'],
-                        fecha_garantia=self.cleaned_data['fecha_garantia'],
-                        proveedor=self.cleaned_data['proveedor'],
-                        periodicidad_mantenimiento=self.cleaned_data['periodicidad_mantenimiento']
-                    )
-                return hardware
-            except Exception as e:
-                # Si hay un error al crear el hardware, eliminamos el activo recién creado
-                if 'activo' in locals() and not activo_id:
-                    activo.delete()
+            # Crear nuevo hardware
+            hardware = Hardware.objects.create(
+                activo=activo,
+                marca=self.cleaned_data['marca'],
+                modelo=self.cleaned_data['modelo'],
+                numero_serie=self.cleaned_data['numero_serie'],
+                especificaciones=self.cleaned_data.get('especificaciones', ''),
+                fecha_garantia=self.cleaned_data.get('fecha_garantia'),
+                proveedor=self.cleaned_data.get('proveedor'),
+                periodicidad_mantenimiento=self.cleaned_data.get(
+                    'periodicidad_mantenimiento', 180)
+            )
 
-                # Añadir el error al formulario
-                self.add_error(
-                    'numero_serie', f"Error al crear hardware: {str(e)}")
-                raise
-        except Exception as e:
-            # Capturar cualquier error y añadirlo al formulario
-            self.add_error(None, f"Error al guardar: {str(e)}")
-            raise
-
-# Agregar a inventario/forms.py
+        return hardware
 
 
 class SoftwareForm(forms.ModelForm):
@@ -167,61 +139,72 @@ class SoftwareForm(forms.ModelForm):
         fields = []  # No usamos los campos del modelo directamente, ya que trabajamos con dos modelos
 
     def save(self, commit=True, user=None):
-        # Primero creamos o actualizamos el activo
-        activo_id = self.instance.activo_id if hasattr(
-            self.instance, 'activo_id') and self.instance.activo_id else None
+        try:
+            # Primero creamos o actualizamos el activo
+            activo_id = self.instance.activo_id if hasattr(
+                self.instance, 'activo_id') and self.instance.activo_id else None
 
-        if activo_id:
-            activo = Activo.objects.get(id=activo_id)
-            activo.nombre = self.cleaned_data['nombre']
-            activo.descripcion = self.cleaned_data['descripcion']
-            activo.fecha_adquisicion = self.cleaned_data['fecha_adquisicion']
-            activo.valor_adquisicion = self.cleaned_data['valor_adquisicion']
-            activo.estado = self.cleaned_data['estado']
-            activo.departamento = self.cleaned_data['departamento']
-            activo.ubicacion = self.cleaned_data['ubicacion']
+            if activo_id:
+                activo = Activo.objects.get(id=activo_id)
+                activo.nombre = self.cleaned_data['nombre']
+                activo.descripcion = self.cleaned_data['descripcion']
+                activo.fecha_adquisicion = self.cleaned_data['fecha_adquisicion']
+                activo.valor_adquisicion = self.cleaned_data['valor_adquisicion']
+                activo.estado = self.cleaned_data['estado']
+                activo.departamento = self.cleaned_data['departamento']
+                activo.ubicacion = self.cleaned_data['ubicacion']
 
-            if self.cleaned_data['imagen']:
-                activo.imagen = self.cleaned_data['imagen']
+                if self.cleaned_data.get('imagen'):
+                    activo.imagen = self.cleaned_data['imagen']
 
-            if user:
-                activo.actualizado_por = user
+                if user:
+                    activo.actualizado_por = user
 
-            activo.save()
-        else:
-            activo = Activo.objects.create(
-                tipo='software',
-                nombre=self.cleaned_data['nombre'],
-                descripcion=self.cleaned_data['descripcion'],
-                fecha_adquisicion=self.cleaned_data['fecha_adquisicion'],
-                valor_adquisicion=self.cleaned_data['valor_adquisicion'],
-                estado=self.cleaned_data['estado'],
-                departamento=self.cleaned_data['departamento'],
-                ubicacion=self.cleaned_data['ubicacion'],
-                imagen=self.cleaned_data['imagen'] if self.cleaned_data['imagen'] else None,
-                creado_por=user,
-                actualizado_por=user
-            )
+                activo.save()
+            else:
+                activo = Activo.objects.create(
+                    tipo='software',
+                    nombre=self.cleaned_data['nombre'],
+                    descripcion=self.cleaned_data['descripcion'],
+                    fecha_adquisicion=self.cleaned_data['fecha_adquisicion'],
+                    valor_adquisicion=self.cleaned_data['valor_adquisicion'],
+                    estado=self.cleaned_data['estado'],
+                    departamento=self.cleaned_data['departamento'],
+                    ubicacion=self.cleaned_data['ubicacion'],
+                    imagen=self.cleaned_data.get('imagen'),
+                    creado_por=user,
+                    actualizado_por=user
+                )
 
-        # Ahora creamos o actualizamos el software
-        if activo_id:
-            software = self.instance
-            software.version = self.cleaned_data['version']
-            software.tipo_licencia = self.cleaned_data['tipo_licencia']
-            software.clave_activacion = self.cleaned_data['clave_activacion']
-            software.fecha_vencimiento = self.cleaned_data['fecha_vencimiento']
-            software.numero_licencias = self.cleaned_data['numero_licencias']
-            software.proveedor = self.cleaned_data['proveedor']
-            software.save()
-        else:
-            software = Software.objects.create(
-                activo=activo,
-                version=self.cleaned_data['version'],
-                tipo_licencia=self.cleaned_data['tipo_licencia'],
-                clave_activacion=self.cleaned_data['clave_activacion'],
-                fecha_vencimiento=self.cleaned_data['fecha_vencimiento'],
-                numero_licencias=self.cleaned_data['numero_licencias'],
-                proveedor=self.cleaned_data['proveedor']
-            )
+            # Ahora creamos o actualizamos el software
+            if activo_id:
+                software = self.instance
+                software.version = self.cleaned_data['version']
+                software.tipo_licencia = self.cleaned_data['tipo_licencia']
+                software.clave_activacion = self.cleaned_data.get(
+                    'clave_activacion', '')
+                software.fecha_vencimiento = self.cleaned_data.get(
+                    'fecha_vencimiento')
+                software.numero_licencias = self.cleaned_data.get(
+                    'numero_licencias', 1)
+                software.proveedor = self.cleaned_data.get('proveedor')
+                software.save()
+            else:
+                software = Software.objects.create(
+                    activo=activo,
+                    version=self.cleaned_data['version'],
+                    tipo_licencia=self.cleaned_data['tipo_licencia'],
+                    clave_activacion=self.cleaned_data.get(
+                        'clave_activacion', ''),
+                    fecha_vencimiento=self.cleaned_data.get(
+                        'fecha_vencimiento'),
+                    numero_licencias=self.cleaned_data.get(
+                        'numero_licencias', 1),
+                    proveedor=self.cleaned_data.get('proveedor')
+                )
 
-        return software
+            return software
+        except Exception as e:
+            # Capturar y reenviar la excepción para que se pueda mostrar en la vista
+            print(f"Error guardando software: {str(e)}")
+            raise

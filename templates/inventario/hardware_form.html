@@ -9,165 +9,139 @@
             <h6 class="m-0 font-weight-bold">{% if is_new %}Registrar Nuevo Hardware{% else %}Editar Hardware{% endif %}</h6>
         </div>
         <div class="card-body">
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            {% if form.errors %}
+            <div class="alert alert-danger">
+                <h5>Por favor corrija los siguientes errores:</h5>
+                <ul>
+                    {% for field in form %}
+                        {% for error in field.errors %}
+                            <li><strong>{{ field.label }}:</strong> {{ error }}</li>
+                        {% endfor %}
+                    {% endfor %}
+                    {% for error in form.non_field_errors %}
+                        <li>{{ error }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+            
             <form method="post" enctype="multipart/form-data">
                 {% csrf_token %}
                 
-                {% if form.non_field_errors %}
-                <div class="alert alert-danger">
-                    {{ form.non_field_errors }}
-                </div>
-                {% endif %}
-                
+                <!-- Campos básicos -->
                 <div class="row mb-3">
                     <div class="col-md-6">
-                        <label for="nombre" class="form-label">Nombre</label>
-                        <input type="text" class="form-control {% if form.nombre.errors %}is-invalid{% endif %}" id="nombre" name="nombre" value="{{ form.nombre.value|default:'' }}" required>
-                        {% if form.nombre.errors %}
-                        <div class="invalid-feedback">{{ form.nombre.errors }}</div>
-                        {% endif %}
+                        <label for="nombre">Nombre *</label>
+                        <input type="text" class="form-control" id="nombre" name="nombre" value="{{ form.nombre.value|default:'' }}" required>
                     </div>
                     <div class="col-md-6">
-                        <label for="departamento" class="form-label">Departamento</label>
-                        <select class="form-select {% if form.departamento.errors %}is-invalid{% endif %}" id="departamento" name="departamento" required>
+                        <label for="departamento">Departamento *</label>
+                        <select class="form-select" id="departamento" name="departamento" required>
                             <option value="">Seleccione un departamento</option>
                             {% for dept in form.fields.departamento.queryset %}
                                 <option value="{{ dept.id }}" {% if form.departamento.value == dept.id %}selected{% endif %}>{{ dept.nombre }}</option>
                             {% endfor %}
                         </select>
-                        {% if form.departamento.errors %}
-                        <div class="invalid-feedback">{{ form.departamento.errors }}</div>
-                        {% endif %}
                     </div>
                 </div>
                 
+                <!-- Campos de marca, modelo y número de serie -->
                 <div class="row mb-3">
-                    <!-- Añadir marca y modelo explícitamente -->
-                    <div class="col-md-6">
-                        <label for="marca" class="form-label">Marca</label>
-                        <input type="text" class="form-control {% if form.marca.errors %}is-invalid{% endif %}" id="marca" name="marca" value="{{ form.marca.value|default:'' }}" required>
-                        {% if form.marca.errors %}
-                        <div class="invalid-feedback">{{ form.marca.errors }}</div>
-                        {% endif %}
+                    <div class="col-md-4">
+                        <label for="marca">Marca *</label>
+                        <input type="text" class="form-control" id="marca" name="marca" value="{{ form.marca.value|default:'' }}" required>
                     </div>
-                    <div class="col-md-6">
-                        <label for="modelo" class="form-label">Modelo</label>
-                        <input type="text" class="form-control {% if form.modelo.errors %}is-invalid{% endif %}" id="modelo" name="modelo" value="{{ form.modelo.value|default:'' }}" required>
-                        {% if form.modelo.errors %}
-                        <div class="invalid-feedback">{{ form.modelo.errors }}</div>
-                        {% endif %}
+                    <div class="col-md-4">
+                        <label for="modelo">Modelo *</label>
+                        <input type="text" class="form-control" id="modelo" name="modelo" value="{{ form.modelo.value|default:'' }}" required>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="numero_serie">Número de Serie *</label>
+                        <input type="text" class="form-control" id="numero_serie" name="numero_serie" value="{{ form.numero_serie.value|default:'' }}" required>
                     </div>
                 </div>
                 
+                <!-- Campos de fecha y valor -->
                 <div class="row mb-3">
                     <div class="col-md-6">
-                        <label for="numero_serie" class="form-label">Número de Serie</label>
-                        <input type="text" class="form-control {% if form.numero_serie.errors %}is-invalid{% endif %}" id="numero_serie" name="numero_serie" value="{{ form.numero_serie.value|default:'' }}" required>
-                        {% if form.numero_serie.errors %}
-                        <div class="invalid-feedback">{{ form.numero_serie.errors }}</div>
-                        {% endif %}
+                        <label for="fecha_adquisicion">Fecha de Adquisición *</label>
+                        <input type="date" class="form-control" id="fecha_adquisicion" name="fecha_adquisicion" value="{{ form.fecha_adquisicion.value|date:'Y-m-d'|default:'' }}" required>
                     </div>
                     <div class="col-md-6">
-                        <label for="proveedor" class="form-label">Proveedor</label>
-                        <select class="form-select {% if form.proveedor.errors %}is-invalid{% endif %}" id="proveedor" name="proveedor" required>
+                        <label for="valor_adquisicion">Valor de Adquisición *</label>
+                        <div class="input-group">
+                            <span class="input-group-text">$</span>
+                            <input type="number" step="0.01" class="form-control" id="valor_adquisicion" name="valor_adquisicion" value="{{ form.valor_adquisicion.value|default:'' }}" required>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Campos de estado y ubicación -->
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="estado">Estado *</label>
+                        <select class="form-select" id="estado" name="estado" required>
+                            {% for value, text in form.fields.estado.choices %}
+                                <option value="{{ value }}" {% if form.estado.value == value %}selected{% endif %}>{{ text }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="ubicacion">Ubicación</label>
+                        <input type="text" class="form-control" id="ubicacion" name="ubicacion" value="{{ form.ubicacion.value|default:'' }}">
+                    </div>
+                </div>
+                
+                <!-- Campos de fecha de garantía y proveedor -->
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="fecha_garantia">Fecha de Garantía</label>
+                        <input type="date" class="form-control" id="fecha_garantia" name="fecha_garantia" value="{{ form.fecha_garantia.value|date:'Y-m-d'|default:'' }}">
+                    </div>
+                    <div class="col-md-6">
+                        <label for="proveedor">Proveedor</label>
+                        <select class="form-select" id="proveedor" name="proveedor">
                             <option value="">Seleccione un proveedor</option>
                             {% for prov in form.fields.proveedor.queryset %}
                                 <option value="{{ prov.id }}" {% if form.proveedor.value == prov.id %}selected{% endif %}>{{ prov.nombre }}</option>
                             {% endfor %}
                         </select>
-                        {% if form.proveedor.errors %}
-                        <div class="invalid-feedback">{{ form.proveedor.errors }}</div>
-                        {% endif %}
                     </div>
                 </div>
                 
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <label for="fecha_adquisicion" class="form-label">Fecha de Adquisición</label>
-                        <input type="date" class="form-control {% if form.fecha_adquisicion.errors %}is-invalid{% endif %}" id="fecha_adquisicion" name="fecha_adquisicion" value="{{ form.fecha_adquisicion.value|date:'Y-m-d'|default:'' }}" required>
-                        {% if form.fecha_adquisicion.errors %}
-                        <div class="invalid-feedback">{{ form.fecha_adquisicion.errors }}</div>
-                        {% endif %}
-                    </div>
-                    <div class="col-md-6">
-                        <label for="valor_adquisicion" class="form-label">Valor de Adquisición</label>
-                        <div class="input-group">
-                            <span class="input-group-text">$</span>
-                            <input type="number" step="0.01" class="form-control {% if form.valor_adquisicion.errors %}is-invalid{% endif %}" id="valor_adquisicion" name="valor_adquisicion" value="{{ form.valor_adquisicion.value|default:'' }}" required>
-                            {% if form.valor_adquisicion.errors %}
-                            <div class="invalid-feedback">{{ form.valor_adquisicion.errors }}</div>
-                            {% endif %}
-                        </div>
-                    </div>
+                <!-- Periodicidad de mantenimiento -->
+                <div class="mb-3">
+                    <label for="periodicidad_mantenimiento">Periodicidad de Mantenimiento (días)</label>
+                    <input type="number" class="form-control" id="periodicidad_mantenimiento" name="periodicidad_mantenimiento" value="{{ form.periodicidad_mantenimiento.value|default:'180' }}">
                 </div>
                 
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <label for="estado" class="form-label">Estado</label>
-                        <select class="form-select {% if form.estado.errors %}is-invalid{% endif %}" id="estado" name="estado" required>
-                            {% for value, text in form.fields.estado.choices %}
-                                <option value="{{ value }}" {% if form.estado.value == value %}selected{% endif %}>{{ text }}</option>
-                            {% endfor %}
-                        </select>
-                        {% if form.estado.errors %}
-                        <div class="invalid-feedback">{{ form.estado.errors }}</div>
-                        {% endif %}
-                    </div>
-                    <div class="col-md-6">
-                        <label for="ubicacion" class="form-label">Ubicación</label>
-                        <input type="text" class="form-control {% if form.ubicacion.errors %}is-invalid{% endif %}" id="ubicacion" name="ubicacion" value="{{ form.ubicacion.value|default:'' }}">
-                        {% if form.ubicacion.errors %}
-                        <div class="invalid-feedback">{{ form.ubicacion.errors }}</div>
-                        {% endif %}
-                    </div>
-                </div>
-                
-                <div class="row mb-3">
-                    <!-- Añadir fecha_garantia y periodicidad_mantenimiento explícitamente -->
-                    <div class="col-md-6">
-                        <label for="fecha_garantia" class="form-label">Fecha de Garantía</label>
-                        <input type="date" class="form-control {% if form.fecha_garantia.errors %}is-invalid{% endif %}" id="fecha_garantia" name="fecha_garantia" value="{{ form.fecha_garantia.value|date:'Y-m-d'|default:'' }}">
-                        {% if form.fecha_garantia.errors %}
-                        <div class="invalid-feedback">{{ form.fecha_garantia.errors }}</div>
-                        {% endif %}
-                    </div>
-                    <div class="col-md-6">
-                        <label for="periodicidad_mantenimiento" class="form-label">Periodicidad de Mantenimiento (días)</label>
-                        <input type="number" class="form-control {% if form.periodicidad_mantenimiento.errors %}is-invalid{% endif %}" id="periodicidad_mantenimiento" name="periodicidad_mantenimiento" value="{{ form.periodicidad_mantenimiento.value|default:'180' }}" required>
-                        {% if form.periodicidad_mantenimiento.errors %}
-                        <div class="invalid-feedback">{{ form.periodicidad_mantenimiento.errors }}</div>
-                        {% endif %}
-                    </div>
+                <!-- Campos de texto largo -->
+                <div class="mb-3">
+                    <label for="especificaciones">Especificaciones</label>
+                    <textarea class="form-control" id="especificaciones" name="especificaciones" rows="3">{{ form.especificaciones.value|default:'' }}</textarea>
                 </div>
                 
                 <div class="mb-3">
-                    <label for="especificaciones" class="form-label">Especificaciones</label>
-                    <textarea class="form-control {% if form.especificaciones.errors %}is-invalid{% endif %}" id="especificaciones" name="especificaciones" rows="3">{{ form.especificaciones.value|default:'' }}</textarea>
-                    {% if form.especificaciones.errors %}
-                    <div class="invalid-feedback">{{ form.especificaciones.errors }}</div>
-                    {% endif %}
+                    <label for="descripcion">Descripción</label>
+                    <textarea class="form-control" id="descripcion" name="descripcion" rows="3">{{ form.descripcion.value|default:'' }}</textarea>
                 </div>
                 
+                <!-- Campo de imagen -->
                 <div class="mb-3">
-                    <label for="descripcion" class="form-label">Descripción</label>
-                    <textarea class="form-control {% if form.descripcion.errors %}is-invalid{% endif %}" id="descripcion" name="descripcion" rows="3">{{ form.descripcion.value|default:'' }}</textarea>
-                    {% if form.descripcion.errors %}
-                    <div class="invalid-feedback">{{ form.descripcion.errors }}</div>
-                    {% endif %}
+                    <label for="imagen">Imagen</label>
+                    <input type="file" class="form-control" id="imagen" name="imagen">
                 </div>
                 
-                <div class="mb-3">
-                    <label for="imagen" class="form-label">Imagen</label>
-                    <input type="file" class="form-control {% if form.imagen.errors %}is-invalid{% endif %}" id="imagen" name="imagen">
-                    {% if form.imagen.errors %}
-                    <div class="invalid-feedback">{{ form.imagen.errors }}</div>
-                    {% endif %}
-                    {% if hardware.activo.imagen %}
-                        <div class="mt-2">
-                            <img src="{{ hardware.activo.imagen.url }}" alt="{{ hardware.activo.nombre }}" class="img-thumbnail" style="max-height: 100px;">
-                        </div>
-                    {% endif %}
-                </div>
-                
+                <!-- Botones de acción -->
                 <div class="d-grid gap-2 d-md-flex justify-content-md-end">
                     <a href="{% url 'hardware_list' %}" class="btn btn-secondary me-md-2">Cancelar</a>
                     <button type="submit" class="btn btn-primary">Guardar</button>
@@ -176,4 +150,19 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Capturar y mostrar todos los errores de JavaScript
+window.onerror = function(message, source, lineno, colno, error) {
+    console.log('Capturado error JS:', message, 'en línea', lineno, 'columna', colno);
+    // Crear un elemento para mostrar el error en la página
+    var errorDiv = document.createElement('div');
+    errorDiv.className = 'alert alert-danger mt-3';
+    errorDiv.innerHTML = '<strong>Error JS:</strong> ' + message + ' <br>Línea: ' + lineno;
+    document.body.appendChild(errorDiv);
+    return true; // Prevenir comportamiento predeterminado
+};
+</script>
 {% endblock %}
