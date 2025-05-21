@@ -1,6 +1,6 @@
 # inventario/forms.py
 from django import forms
-from .models import Activo, Hardware, Proveedor, Software
+from .models import Activo, Hardware, Software
 from usuarios.models import Departamento, LogActividad
 
 
@@ -21,8 +21,6 @@ class HardwareForm(forms.ModelForm):
     especificaciones = forms.CharField(widget=forms.Textarea, required=False)
     fecha_garantia = forms.DateField(widget=forms.DateInput(
         attrs={'type': 'date'}), required=False)
-    proveedor = forms.ModelChoiceField(
-        queryset=Proveedor.objects.all(), required=False)
     periodicidad_mantenimiento = forms.IntegerField(initial=180)
 
     class Meta:
@@ -68,7 +66,6 @@ class HardwareForm(forms.ModelForm):
             hardware.especificaciones = self.cleaned_data.get(
                 'especificaciones', '')
             hardware.fecha_garantia = self.cleaned_data.get('fecha_garantia')
-            hardware.proveedor = self.cleaned_data.get('proveedor')
             hardware.periodicidad_mantenimiento = self.cleaned_data.get(
                 'periodicidad_mantenimiento', 180)
             hardware.save()
@@ -99,7 +96,6 @@ class HardwareForm(forms.ModelForm):
                 numero_serie=self.cleaned_data['numero_serie'],
                 especificaciones=self.cleaned_data.get('especificaciones', ''),
                 fecha_garantia=self.cleaned_data.get('fecha_garantia'),
-                proveedor=self.cleaned_data.get('proveedor'),
                 periodicidad_mantenimiento=self.cleaned_data.get(
                     'periodicidad_mantenimiento', 180)
             )
@@ -131,8 +127,6 @@ class SoftwareForm(forms.ModelForm):
         attrs={'type': 'date'}), required=False, label='Fecha de vencimiento')
     numero_licencias = forms.IntegerField(
         initial=1, label='Número de licencias')
-    proveedor = forms.ModelChoiceField(
-        queryset=Proveedor.objects.all(), required=False, label='Proveedor')
 
     class Meta:
         model = Software
@@ -187,7 +181,6 @@ class SoftwareForm(forms.ModelForm):
                     'fecha_vencimiento')
                 software.numero_licencias = self.cleaned_data.get(
                     'numero_licencias', 1)
-                software.proveedor = self.cleaned_data.get('proveedor')
                 software.save()
             else:
                 software = Software.objects.create(
@@ -199,8 +192,7 @@ class SoftwareForm(forms.ModelForm):
                     fecha_vencimiento=self.cleaned_data.get(
                         'fecha_vencimiento'),
                     numero_licencias=self.cleaned_data.get(
-                        'numero_licencias', 1),
-                    proveedor=self.cleaned_data.get('proveedor')
+                        'numero_licencias', 1)
                 )
 
             return software

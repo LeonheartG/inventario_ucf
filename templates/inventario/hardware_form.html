@@ -101,20 +101,11 @@
                     </div>
                 </div>
                 
-                <!-- Campos de fecha de garantía y proveedor -->
+                <!-- Campo de fecha de garantía -->
                 <div class="row mb-3">
                     <div class="col-md-6">
                         <label for="fecha_garantia">Fecha de Garantía</label>
                         <input type="date" class="form-control" id="fecha_garantia" name="fecha_garantia" value="{{ form.fecha_garantia.value|date:'Y-m-d'|default:'' }}">
-                    </div>
-                    <div class="col-md-6">
-                        <label for="proveedor">Proveedor</label>
-                        <select class="form-select" id="proveedor" name="proveedor">
-                            <option value="">Seleccione un proveedor</option>
-                            {% for prov in form.fields.proveedor.queryset %}
-                                <option value="{{ prov.id }}" {% if form.proveedor.value == prov.id %}selected{% endif %}>{{ prov.nombre }}</option>
-                            {% endfor %}
-                        </select>
                     </div>
                 </div>
                 

@@ -3,7 +3,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.contrib.auth.models import User
-from .models import Activo, Hardware, Software, Mantenimiento, Proveedor
+from .models import Activo, Hardware, Software, Mantenimiento
 from .forms import HardwareForm, SoftwareForm
 from usuarios.models import LogActividad
 
@@ -89,9 +89,6 @@ def hardware_create(request):
             if request.POST.get('fecha_garantia'):
                 hardware.fecha_garantia = request.POST.get('fecha_garantia')
 
-            if request.POST.get('proveedor'):
-                hardware.proveedor_id = request.POST.get('proveedor')
-
             hardware.save()
 
             # Registrar Actividad
@@ -169,7 +166,6 @@ def hardware_update(request, pk):
             'numero_serie': hardware.numero_serie,
             'especificaciones': hardware.especificaciones,
             'fecha_garantia': hardware.fecha_garantia,
-            'proveedor': hardware.proveedor,
             'periodicidad_mantenimiento': hardware.periodicidad_mantenimiento
         }
         form = HardwareForm(instance=hardware, initial=initial_data)
@@ -274,9 +270,6 @@ def software_create(request):
                 software.fecha_vencimiento = request.POST.get(
                     'fecha_vencimiento')
 
-            if request.POST.get('proveedor'):
-                software.proveedor_id = request.POST.get('proveedor')
-
             software.save()
 
             # Registrar actividad
@@ -349,11 +342,6 @@ def software_update(request, pk):
             else:
                 software.fecha_vencimiento = None
 
-            if request.POST.get('proveedor'):
-                software.proveedor_id = request.POST.get('proveedor')
-            else:
-                software.proveedor = None
-
             software.save()
 
             # Registrar actividad
@@ -382,8 +370,7 @@ def software_update(request, pk):
         'tipo_licencia': software.tipo_licencia,
         'clave_activacion': software.clave_activacion,
         'fecha_vencimiento': software.fecha_vencimiento,
-        'numero_licencias': software.numero_licencias,
-        'proveedor': software.proveedor
+        'numero_licencias': software.numero_licencias
     })
 
     return render(request, 'inventario/software_form.html', {'form': form, 'software': software, 'is_new': False})

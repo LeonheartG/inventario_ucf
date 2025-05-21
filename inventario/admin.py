@@ -1,6 +1,6 @@
 from django.contrib import admin
 from .models import (
-    Activo, Proveedor, Hardware, Software,
+    Activo, Hardware, Software,
     Mantenimiento, Proceso, ActivoProceso
 )
 
@@ -51,28 +51,22 @@ class ActivoAdmin(admin.ModelAdmin):
         return []
 
 
-@admin.register(Proveedor)
-class ProveedorAdmin(admin.ModelAdmin):
-    list_display = ('nombre', 'telefono', 'email')
-    search_fields = ('nombre', 'email')
-
-
 @admin.register(Hardware)
 class HardwareAdmin(admin.ModelAdmin):
     list_display = ('activo', 'marca', 'modelo',
                     'numero_serie', 'fecha_garantia')
-    list_filter = ('marca', 'proveedor')
+    list_filter = ('marca',)
     search_fields = ('activo__nombre', 'marca', 'modelo', 'numero_serie')
-    autocomplete_fields = ['activo', 'proveedor']
+    autocomplete_fields = ['activo']
 
 
 @admin.register(Software)
 class SoftwareAdmin(admin.ModelAdmin):
     list_display = ('activo', 'version', 'tipo_licencia',
                     'fecha_vencimiento', 'numero_licencias')
-    list_filter = ('tipo_licencia', 'proveedor')
+    list_filter = ('tipo_licencia',)
     search_fields = ('activo__nombre', 'version')
-    autocomplete_fields = ['activo', 'proveedor']
+    autocomplete_fields = ['activo']
 
 
 @admin.register(Mantenimiento)

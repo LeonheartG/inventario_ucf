@@ -45,22 +45,6 @@ class Activo(models.Model):
         ordering = ['-fecha_adquisicion']
 
 
-class Proveedor(models.Model):
-    nombre = models.CharField(max_length=200)
-    telefono = models.CharField(max_length=20, blank=True, null=True)
-    email = models.EmailField(blank=True, null=True)
-    direccion = models.TextField(blank=True, null=True)
-    sitio_web = models.URLField(blank=True, null=True)
-    notas = models.TextField(blank=True, null=True)
-
-    def __str__(self):
-        return self.nombre
-
-    class Meta:
-        verbose_name = "Proveedor"
-        verbose_name_plural = "Proveedores"
-
-
 class Hardware(models.Model):
     activo = models.OneToOneField(
         Activo, on_delete=models.CASCADE, primary_key=True)
@@ -69,8 +53,6 @@ class Hardware(models.Model):
     numero_serie = models.CharField(max_length=100, unique=True)
     especificaciones = models.TextField(blank=True, null=True)
     fecha_garantia = models.DateField(blank=True, null=True)
-    proveedor = models.ForeignKey(
-        Proveedor, on_delete=models.SET_NULL, null=True)
     periodicidad_mantenimiento = models.IntegerField(
         help_text="Periodicidad en días", default=180)
 
@@ -98,8 +80,6 @@ class Software(models.Model):
     clave_activacion = models.CharField(max_length=200, blank=True, null=True)
     fecha_vencimiento = models.DateField(blank=True, null=True)
     numero_licencias = models.IntegerField(default=1)
-    proveedor = models.ForeignKey(
-        Proveedor, on_delete=models.SET_NULL, null=True)
 
     def __str__(self):
         return f"{self.activo.nombre} - v{self.version}"
