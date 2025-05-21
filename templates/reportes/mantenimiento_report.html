@@ -49,14 +49,12 @@
                             </select>
                         </div>
                         <div class="col-md-3">
-                            <label for="formato" class="form-label">Formato</label>
-                            <select class="form-select" id="formato" name="formato">
-                                <option value="html" {% if form.formato.value == 'html' %}selected{% endif %}>HTML</option>
-                                <option value="pdf" {% if form.formato.value == 'pdf' %}selected{% endif %}>PDF</option>
-                                <option value="csv" {% if form.formato.value == 'csv' %}selected{% endif %}>CSV</option>
-                                <option value="excel" {% if form.formato.value == 'excel' %}selected{% endif %}>Excel</option>
-                            </select>
-                        </div>
+    <label for="formato" class="form-label">Formato</label>
+    <select class="form-select" id="formato" name="formato">
+        <option value="pdf" {% if form.formato.value == 'pdf' %}selected{% endif %}>PDF</option>
+        <option value="excel" {% if form.formato.value == 'excel' %}selected{% endif %}>Excel</option>
+    </select>
+</div>
                         <div class="col-md-6">
                             <label for="fecha_inicio" class="form-label">Fecha programada desde</label>
                             <input type="date" class="form-control" id="fecha_inicio" name="fecha_inicio" value="{{ form.fecha_inicio.value|date:'Y-m-d'|default:'' }}">
