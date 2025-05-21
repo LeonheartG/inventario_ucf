@@ -82,15 +82,6 @@
                             {% endfor %}
                         </select>
                     </div>
-                    <div class="col-md-6">
-                        <label for="proveedor" class="form-label">Proveedor</label>
-                        <select class="form-select" id="proveedor" name="proveedor">
-                            <option value="">Seleccione un proveedor</option>
-                            {% for prov in form.fields.proveedor.queryset %}
-                                <option value="{{ prov.id }}" {% if form.proveedor.value == prov.id %}selected{% endif %}>{{ prov.nombre }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
                 </div>
                 
                 <div class="mb-3">

@@ -12,7 +12,7 @@ from io import BytesIO
 import os
 
 # Importaciones de modelos
-from inventario.models import Activo, Hardware, Software, Mantenimiento, Proveedor
+from inventario.models import Activo, Hardware, Software, Mantenimiento
 from locales.models import Local, Equipamiento
 from usuarios.models import Departamento
 from diagnostico.models import Diagnostico, IndicadorDiagnostico as Indicador
