@@ -165,31 +165,77 @@ def profile_view(request):
 @login_required
 def dashboard_view(request):
     """Vista del dashboard principal"""
-    # Importación dentro de la función para evitar problemas de importación circular
-    try:
-        from inventario.models import Activo, Hardware, Software, Mantenimiento
+    # Importación de modelos necesarios
+    from inventario.models import Activo, Hardware, Software, Mantenimiento
+    from django.db.models import Count, Sum, Q
+    from django.utils import timezone
+    from datetime import timedelta
 
-        # Contadores
-        total_activos = Activo.objects.count()
-        total_hardware = Hardware.objects.count()
-        total_software = Software.objects.count()
-        mantenimientos_pendientes = Mantenimiento.objects.filter(
-            estado='programado').count()
-    except ImportError:
-        # En caso de que no existan todavía los modelos de inventario
-        total_activos = 0
-        total_hardware = 0
-        total_software = 0
-        mantenimientos_pendientes = 0
+    # Fechas para filtros
+    hoy = timezone.now().date()
+    mes_pasado = hoy - timedelta(days=30)
 
-    # Obtener actividades recientes
-    actividades = LogActividad.objects.all().order_by('-fecha')[:10]
+    # Activos
+    hardware_ids = Hardware.objects.values_list('activo_id', flat=True)
+    software_ids = Software.objects.values_list('activo_id', flat=True)
+    total_activos = Activo.objects.filter(
+        id__in=list(hardware_ids) + list(software_ids)
+    ).exclude(estado='baja').count()
+
+    total_hardware = Hardware.objects.select_related('activo').filter(
+        activo__estado__in=['activo', 'en_mantenimiento', 'obsoleto']
+    ).count()
+
+    total_software = Software.objects.select_related('activo').filter(
+        activo__estado__in=['activo', 'en_mantenimiento', 'obsoleto']
+    ).count()
+
+    # Mantenimientos
+    mantenimientos_pendientes = Mantenimiento.objects.filter(
+        Q(estado='programado') | Q(estado='en_proceso')
+    ).count()
+
+    # Equipos obsoletos
+    equipos_obsoletos = Activo.objects.filter(estado='obsoleto').count()
+
+    # Software por vencer
+    software_vencer = Software.objects.filter(
+        fecha_vencimiento__isnull=False,
+        fecha_vencimiento__gte=hoy,
+        fecha_vencimiento__lte=hoy + timedelta(days=30),
+        activo__estado='activo'
+    ).count()
+
+    # Distribución por tipo
+    por_tipo = [
+        {'name': 'Hardware', 'value': total_hardware},
+        {'name': 'Software', 'value': total_software}
+    ]
+
+    # Distribución por departamento
+    por_departamento = Activo.objects.filter(
+        id__in=list(hardware_ids) + list(software_ids)
+    ).exclude(
+        estado='baja'
+    ).values(
+        'departamento__nombre'
+    ).annotate(
+        total=Count('id')
+    ).order_by('-total')[:5]
+
+    # Obtener logs de actividad reciente
+    actividades = LogActividad.objects.select_related(
+        'usuario').order_by('-fecha')[:10]
 
     context = {
         'total_activos': total_activos,
         'total_hardware': total_hardware,
         'total_software': total_software,
         'mantenimientos_pendientes': mantenimientos_pendientes,
+        'equipos_obsoletos': equipos_obsoletos,
+        'software_vencer': software_vencer,
+        'por_tipo': por_tipo,
+        'por_departamento': por_departamento,
         'actividades': actividades,
     }
 

@@ -132,6 +132,12 @@ a:hover {
     color: var(--white);
 }
 
+.card-header h6, 
+.card-header .text-primary,
+.card-header .m-0.font-weight-bold.text-primary {
+    color: var(--white) !important;
+}
+
 .card-title {
     color: var(--primary);
     font-weight: 600;
@@ -206,6 +212,63 @@ a:hover {
 .dashboard-icon {
     font-size: 3rem;
     color: var(--secondary);
+}
+
+/* Dashboard cards específicas */
+.border-left-primary {
+    border-left: 0.25rem solid var(--primary);
+}
+
+.border-left-success {
+    border-left: 0.25rem solid #28a745;
+}
+
+.border-left-info {
+    border-left: 0.25rem solid var(--secondary);
+}
+
+.border-left-warning {
+    border-left: 0.25rem solid #ffc107;
+}
+
+.text-primary {
+    color: var(--primary) !important;
+}
+
+.text-success {
+    color: #28a745 !important;
+}
+
+.text-info {
+    color: var(--secondary) !important;
+}
+
+.text-warning {
+    color: #ffc107 !important;
+}
+
+.text-xs {
+    font-size: 0.7rem;
+}
+
+.text-gray-300 {
+    color: #dddfeb !important;
+}
+
+.text-gray-800 {
+    color: #5a5c69 !important;
+}
+
+/* Fondos con texto en blanco */
+.bg-primary {
+    background-color: var(--primary) !important;
+    color: var(--white) !important;
+}
+
+.bg-primary .text-primary,
+.bg-primary h6,
+.bg-primary .m-0 {
+    color: var(--white) !important;
 }
 
 /* Form elements con mejor contraste */

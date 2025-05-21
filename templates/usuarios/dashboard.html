@@ -2,6 +2,50 @@
 
 {% block title %}Dashboard - UCF{% endblock %}
 
+{% block extra_css %}
+<style>
+    .card-header {
+        background-color: var(--primary);
+    }
+    .card-header h6, .card-header .text-primary {
+        color: white !important;
+    }
+    .border-left-primary {
+        border-left: 0.25rem solid var(--primary);
+    }
+    .border-left-success {
+        border-left: 0.25rem solid #28a745;
+    }
+    .border-left-info {
+        border-left: 0.25rem solid var(--secondary);
+    }
+    .border-left-warning {
+        border-left: 0.25rem solid #ffc107;
+    }
+    .text-primary {
+        color: var(--primary) !important;
+    }
+    .text-success {
+        color: #28a745 !important;
+    }
+    .text-info {
+        color: var(--secondary) !important;
+    }
+    .text-warning {
+        color: #ffc107 !important;
+    }
+    .text-xs {
+        font-size: 0.7rem;
+    }
+    .text-gray-300 {
+        color: #dddfeb !important;
+    }
+    .text-gray-800 {
+        color: #5a5c69 !important;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="container">
     <div class="row mb-4">
@@ -20,7 +64,7 @@
                         <div class="col mr-2">
                             <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
                                 Total de Activos</div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">0</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_activos }}</div>
                         </div>
                         <div class="col-auto">
                             <i class="fas fa-desktop fa-2x text-gray-300"></i>
@@ -37,7 +81,7 @@
                         <div class="col mr-2">
                             <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
                                 Mantenimientos Pendientes</div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">0</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ mantenimientos_pendientes }}</div>
                         </div>
                         <div class="col-auto">
                             <i class="fas fa-tools fa-2x text-gray-300"></i>
@@ -56,7 +100,7 @@
                             </div>
                             <div class="row no-gutters align-items-center">
                                 <div class="col-auto">
-                                    <div class="h5 mb-0 mr-3 font-weight-bold text-gray-800">0</div>
+                                    <div class="h5 mb-0 mr-3 font-weight-bold text-gray-800">{{ software_vencer }}</div>
                                 </div>
                             </div>
                         </div>
@@ -75,7 +119,7 @@
                         <div class="col mr-2">
                             <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
                                 Equipos Obsoletos</div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">0</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ equipos_obsoletos }}</div>
                         </div>
                         <div class="col-auto">
                             <i class="fas fa-exclamation-triangle fa-2x text-gray-300"></i>
@@ -93,8 +137,16 @@
                     <h6 class="m-0 font-weight-bold text-primary">Distribución de Activos por Tipo</h6>
                 </div>
                 <div class="card-body">
-                    <div class="text-center">
-                        <p>Gráfico de distribución (en construcción)</p>
+                    <div class="chart-pie pt-4 pb-2">
+                        <canvas id="distribucionTipoChart"></canvas>
+                    </div>
+                    <div class="mt-4 text-center small">
+                        <span class="mr-2">
+                            <i class="fas fa-circle text-primary"></i> Hardware ({{ total_hardware }})
+                        </span>
+                        <span class="mr-2">
+                            <i class="fas fa-circle text-success"></i> Software ({{ total_software }})
+                        </span>
                     </div>
                 </div>
             </div>
@@ -106,8 +158,8 @@
                     <h6 class="m-0 font-weight-bold text-primary">Distribución por Departamento</h6>
                 </div>
                 <div class="card-body">
-                    <div class="text-center">
-                        <p>Gráfico de distribución (en construcción)</p>
+                    <div class="chart-bar">
+                        <canvas id="distribucionDepartamentoChart"></canvas>
                     </div>
                 </div>
             </div>
@@ -121,7 +173,30 @@
                     <h6 class="m-0 font-weight-bold text-primary">Actividad Reciente</h6>
                 </div>
                 <div class="card-body">
-                    <p>No hay actividades recientes registradas.</p>
+                    {% if actividades %}
+                        <div class="table-responsive">
+                            <table class="table table-bordered" width="100%" cellspacing="0">
+                                <thead>
+                                    <tr>
+                                        <th>Usuario</th>
+                                        <th>Acción</th>
+                                        <th>Fecha</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for actividad in actividades %}
+                                    <tr>
+                                        <td>{{ actividad.usuario.username }}</td>
+                                        <td>{{ actividad.accion }}</td>
+                                        <td>{{ actividad.fecha|date:"d/m/Y H:i" }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <p>No hay actividades recientes registradas.</p>
+                    {% endif %}
                 </div>
             </div>
         </div>
@@ -131,5 +206,65 @@
 
 {% block extra_js %}
 <!-- Font Awesome -->
-<script src="https://kit.fontawesome.com/a076d05399.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/js/all.min.js"></script>
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Gráfico de tipo de activos
+        var ctxPie = document.getElementById('distribucionTipoChart').getContext('2d');
+        var myPieChart = new Chart(ctxPie, {
+            type: 'doughnut',
+            data: {
+                labels: ['Hardware', 'Software'],
+                datasets: [{
+                    data: [{{ total_hardware }}, {{ total_software }}],
+                    backgroundColor: ['#4e73df', '#1cc88a'],
+                    hoverBackgroundColor: ['#2e59d9', '#17a673'],
+                    hoverBorderColor: "rgba(234, 236, 244, 1)",
+                }],
+            },
+            options: {
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                cutout: '50%',
+            },
+        });
+
+        // Gráfico de departamentos
+        var ctxBar = document.getElementById('distribucionDepartamentoChart').getContext('2d');
+        var myBarChart = new Chart(ctxBar, {
+            type: 'bar',
+            data: {
+                labels: [
+                    {% for depto in por_departamento %}
+                    "{{ depto.departamento__nombre }}",
+                    {% endfor %}
+                ],
+                datasets: [{
+                    label: "Activos",
+                    backgroundColor: "#4e73df",
+                    hoverBackgroundColor: "#2e59d9",
+                    data: [
+                        {% for depto in por_departamento %}
+                        {{ depto.total }},
+                        {% endfor %}
+                    ],
+                }],
+            },
+            options: {
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    });
+</script>
 {% endblock %}
