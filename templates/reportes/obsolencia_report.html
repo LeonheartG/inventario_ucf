@@ -13,15 +13,14 @@
                         <i class="fas fa-print"></i> Imprimir
                     </button>
                     <div class="btn-group">
-                        <button type="button" class="btn btn-outline-primary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
-                            <i class="fas fa-download"></i> Exportar
-                        </button>
-                        <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="{% url 'export_inventario' format='pdf' %}?estado=obsoleto">PDF</a></li>
-                            <li><a class="dropdown-item" href="{% url 'export_inventario' format='csv' %}?estado=obsoleto">CSV</a></li>
-                            <li><a class="dropdown-item" href="{% url 'export_inventario' format='excel' %}?estado=obsoleto">Excel</a></li>
-                        </ul>
-                    </div>
+    <button type="button" class="btn btn-outline-primary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+        <i class="fas fa-download"></i> Exportar
+    </button>
+    <ul class="dropdown-menu">
+        <li><a class="dropdown-item" href="{% url 'export_inventario' format='pdf' %}?estado=obsoleto">PDF</a></li>
+        <li><a class="dropdown-item" href="{% url 'export_inventario' format='excel' %}?estado=obsoleto">Excel</a></li>
+    </ul>
+</div>
                     <a href="{% url 'reportes_index' %}" class="btn btn-secondary">
                         <i class="fas fa-arrow-left"></i> Volver
                     </a>

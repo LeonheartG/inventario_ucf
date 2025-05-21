@@ -17,19 +17,11 @@ from locales.models import Local, Equipamiento
 from usuarios.models import Departamento
 from diagnostico.models import Diagnostico, IndicadorDiagnostico as Indicador
 
-# Librerías para exportación
-try:
-    import xlsxwriter
-except ImportError:
-    xlsxwriter = None
-
-try:
-    from reportlab.platypus import SimpleDocTemplate, Paragraph, Table, TableStyle, Image, Spacer
-    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-    from reportlab.lib import colors
-    from reportlab.lib.pagesizes import letter
-except ImportError:
-    reportlab = None
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Table, TableStyle, Image, Spacer
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib import colors
+from reportlab.lib.pagesizes import letter, landscape
+from reportlab.lib.units import inch
 
 
 @login_required
@@ -213,14 +205,9 @@ def inventario_report(request):
         # Si hay parámetros en la URL, procesar el formulario
         form = InventarioReportForm(request.GET)
         if form.is_valid():
-            # Redireccionar a la vista de resultados
-            if form.cleaned_data.get('formato', 'html') != 'html':
-                # Si el formato no es HTML, exportar directamente
-                formato = form.cleaned_data.get('formato')
-                return redirect('export_inventario', format=formato)
-            else:
-                # Si es HTML, mostrar resultados
-                return redirect('inventario_report_result')
+            # Exportar directamente en el formato seleccionado
+            formato = form.cleaned_data.get('formato', 'pdf')
+            return export_inventario(request, format=formato)
     else:
         # Si no hay parámetros, mostrar formulario vacío
         form = InventarioReportForm()
@@ -439,14 +426,9 @@ def mantenimiento_report(request):
         # Si hay parámetros en la URL, procesar el formulario
         form = MantenimientoReportForm(request.GET)
         if form.is_valid():
-            # Redireccionar a la vista de resultados
-            if form.cleaned_data.get('formato', 'html') != 'html':
-                # Si el formato no es HTML, exportar directamente
-                formato = form.cleaned_data.get('formato')
-                return redirect('export_mantenimiento', format=formato)
-            else:
-                # Si es HTML, mostrar resultados
-                return redirect('mantenimiento_report_result')
+            # Exportar directamente en el formato seleccionado
+            formato = form.cleaned_data.get('formato', 'pdf')
+            return export_mantenimiento(request, format=formato)
     else:
         # Si no hay parámetros, mostrar formulario vacío
         form = MantenimientoReportForm()
@@ -526,14 +508,9 @@ def transformacion_digital_report(request):
         # Si hay parámetros en la URL, procesar el formulario
         form = TransformacionDigitalReportForm(request.GET)
         if form.is_valid():
-            # Redireccionar a la vista de resultados
-            if form.cleaned_data.get('formato', 'html') != 'html':
-                # Si el formato no es HTML, exportar directamente
-                formato = form.cleaned_data.get('formato')
-                return redirect('export_diagnostico', format=formato)
-            else:
-                # Si es HTML, mostrar resultados
-                return redirect('transformacion_digital_report_result')
+            # Exportar directamente en el formato seleccionado
+            formato = form.cleaned_data.get('formato', 'pdf')
+            return export_diagnostico(request, format=formato)
     else:
         # Si no hay parámetros, mostrar formulario vacío
         form = TransformacionDigitalReportForm()
@@ -614,7 +591,7 @@ def transformacion_digital_report_result(request):
 # Funciones de exportación
 @login_required
 def export_inventario(request, format):
-    """Exportar reporte de inventario a diferentes formatos"""
+    """Exportar reporte de inventario a PDF o Excel"""
     # Obtener los mismos filtros que se usaron en el reporte
     tipo = request.GET.get('tipo', '')
     departamento = request.GET.get('departamento', '')
@@ -640,29 +617,7 @@ def export_inventario(request, format):
     if fecha_fin:
         activos = activos.filter(fecha_adquisicion__lte=fecha_fin)
 
-    if format == 'csv':
-        # Crear respuesta CSV
-        response = HttpResponse(content_type='text/csv')
-        response['Content-Disposition'] = 'attachment; filename="inventario.csv"'
-
-        writer = csv.writer(response)
-        writer.writerow(['ID', 'Nombre', 'Tipo', 'Departamento',
-                        'Estado', 'Valor', 'Fecha Adquisición'])
-
-        for activo in activos:
-            writer.writerow([
-                activo.id,
-                activo.nombre,
-                activo.get_tipo_display(),
-                activo.departamento.nombre,
-                activo.get_estado_display(),
-                activo.valor_adquisicion,
-                activo.fecha_adquisicion
-            ])
-
-        return response
-
-    elif format == 'excel' and xlsxwriter:
+    if format == 'excel' and xlsxwriter:
         # Crear respuesta Excel
         output = BytesIO()
         workbook = xlsxwriter.Workbook(output)
@@ -699,22 +654,47 @@ def export_inventario(request, format):
         response['Content-Disposition'] = 'attachment; filename="inventario.xlsx"'
         return response
 
-    elif format == 'pdf' and reportlab:
+    elif format == 'pdf':
         # Crear respuesta PDF
         response = HttpResponse(content_type='application/pdf')
         response['Content-Disposition'] = 'attachment; filename="inventario.pdf"'
 
         buffer = BytesIO()
-        doc = SimpleDocTemplate(buffer, pagesize=letter)
+        doc = SimpleDocTemplate(buffer, pagesize=landscape(letter),
+                                rightMargin=72, leftMargin=72,
+                                topMargin=72, bottomMargin=72)
         elements = []
 
         # Estilos
         styles = getSampleStyleSheet()
         title_style = styles['Heading1']
+        subtitle_style = styles['Heading2']
+        normal_style = styles['Normal']
 
-        # Título
+        # Título y subtítulo
         elements.append(Paragraph("Reporte de Inventario", title_style))
         elements.append(Spacer(1, 12))
+
+        # Filtros aplicados
+        filtros = []
+        if tipo:
+            filtros.append(f"Tipo: {tipo}")
+        if departamento:
+            dept_name = Departamento.objects.filter(id=departamento).first()
+            if dept_name:
+                filtros.append(f"Departamento: {dept_name.nombre}")
+        if estado:
+            estado_display = dict(Activo.ESTADO_CHOICES).get(estado, estado)
+            filtros.append(f"Estado: {estado_display}")
+        if fecha_inicio:
+            filtros.append(f"Desde: {fecha_inicio}")
+        if fecha_fin:
+            filtros.append(f"Hasta: {fecha_fin}")
+
+        if filtros:
+            elements.append(Paragraph("Filtros aplicados: " +
+                            ", ".join(filtros), normal_style))
+            elements.append(Spacer(1, 12))
 
         # Datos para la tabla
         data = [['ID', 'Nombre', 'Tipo', 'Departamento', 'Estado', 'Valor', 'Fecha']]
@@ -726,12 +706,12 @@ def export_inventario(request, format):
                 activo.get_tipo_display(),
                 activo.departamento.nombre,
                 activo.get_estado_display(),
-                str(activo.valor_adquisicion),
+                f"${activo.valor_adquisicion}",
                 activo.fecha_adquisicion.strftime('%Y-%m-%d')
             ])
 
         # Crear tabla
-        table = Table(data)
+        table = Table(data, repeatRows=1)
         table.setStyle(TableStyle([
             ('BACKGROUND', (0, 0), (-1, 0), colors.blue),
             ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
@@ -744,6 +724,23 @@ def export_inventario(request, format):
 
         elements.append(table)
 
+        # Resumen
+        elements.append(Spacer(1, 20))
+        elements.append(Paragraph("Resumen", subtitle_style))
+        elements.append(Spacer(1, 6))
+
+        total_activos = len(activos)
+        valor_total = sum(float(activo.valor_adquisicion)
+                          for activo in activos)
+        valor_promedio = valor_total / total_activos if total_activos > 0 else 0
+
+        elements.append(
+            Paragraph(f"Total de activos: {total_activos}", normal_style))
+        elements.append(
+            Paragraph(f"Valor total: ${valor_total:.2f}", normal_style))
+        elements.append(
+            Paragraph(f"Valor promedio: ${valor_promedio:.2f}", normal_style))
+
         # Construir PDF
         doc.build(elements)
         pdf = buffer.getvalue()
@@ -753,13 +750,13 @@ def export_inventario(request, format):
         return response
 
     else:
-        # Si no se pudo exportar, redirigir al reporte HTML
-        return redirect('inventario_report_result')
+        # Por defecto, exportar como PDF si no se especifica o no es válido
+        return export_inventario(request, 'pdf')
 
 
 @login_required
 def export_mantenimiento(request, format):
-    """Exportar reporte de mantenimientos a diferentes formatos"""
+    """Exportar reporte de mantenimientos a PDF o Excel"""
     # Obtener los mismos filtros que se usaron en el reporte
     tipo = request.GET.get('tipo', '')
     estado = request.GET.get('estado', '')
@@ -786,30 +783,7 @@ def export_mantenimiento(request, format):
     if fecha_fin:
         mantenimientos = mantenimientos.filter(fecha_programada__lte=fecha_fin)
 
-    if format == 'csv':
-        # Crear respuesta CSV
-        response = HttpResponse(content_type='text/csv')
-        response['Content-Disposition'] = 'attachment; filename="mantenimientos.csv"'
-
-        writer = csv.writer(response)
-        writer.writerow(['ID', 'Activo', 'Tipo', 'Fecha Programada',
-                        'Fecha Realización', 'Responsable', 'Estado', 'Costo'])
-
-        for mant in mantenimientos:
-            writer.writerow([
-                mant.id,
-                mant.activo.nombre,
-                mant.get_tipo_display(),
-                mant.fecha_programada,
-                mant.fecha_realizacion or '',
-                mant.responsable.get_full_name() if mant.responsable else '',
-                mant.get_estado_display(),
-                mant.costo or ''
-            ])
-
-        return response
-
-    elif format == 'excel' and xlsxwriter:
+    if format == 'excel' and xlsxwriter:
         # Crear respuesta Excel
         output = BytesIO()
         workbook = xlsxwriter.Workbook(output)
@@ -850,26 +824,54 @@ def export_mantenimiento(request, format):
         response['Content-Disposition'] = 'attachment; filename="mantenimientos.xlsx"'
         return response
 
-    elif format == 'pdf' and reportlab:
+    elif format == 'pdf':
         # Crear respuesta PDF
         response = HttpResponse(content_type='application/pdf')
         response['Content-Disposition'] = 'attachment; filename="mantenimientos.pdf"'
 
         buffer = BytesIO()
-        doc = SimpleDocTemplate(buffer, pagesize=letter)
+        doc = SimpleDocTemplate(buffer, pagesize=landscape(letter),
+                                rightMargin=72, leftMargin=72,
+                                topMargin=72, bottomMargin=72)
         elements = []
 
         # Estilos
         styles = getSampleStyleSheet()
         title_style = styles['Heading1']
+        subtitle_style = styles['Heading2']
+        normal_style = styles['Normal']
 
         # Título
         elements.append(Paragraph("Reporte de Mantenimientos", title_style))
         elements.append(Spacer(1, 12))
 
+        # Filtros aplicados
+        filtros = []
+        if tipo:
+            tipo_display = dict(Mantenimiento.TIPO_CHOICES).get(tipo, tipo)
+            filtros.append(f"Tipo: {tipo_display}")
+        if estado:
+            estado_display = dict(
+                Mantenimiento.ESTADO_CHOICES).get(estado, estado)
+            filtros.append(f"Estado: {estado_display}")
+        if responsable:
+            resp_name = User.objects.filter(id=responsable).first()
+            if resp_name:
+                filtros.append(
+                    f"Responsable: {resp_name.get_full_name() or resp_name.username}")
+        if fecha_inicio:
+            filtros.append(f"Desde: {fecha_inicio}")
+        if fecha_fin:
+            filtros.append(f"Hasta: {fecha_fin}")
+
+        if filtros:
+            elements.append(Paragraph("Filtros aplicados: " +
+                            ", ".join(filtros), normal_style))
+            elements.append(Spacer(1, 12))
+
         # Datos para la tabla
         data = [['ID', 'Activo', 'Tipo', 'Fecha Prog.',
-                 'Fecha Real.', 'Responsable', 'Estado']]
+                 'Fecha Real.', 'Responsable', 'Estado', 'Costo']]
 
         for mant in mantenimientos:
             data.append([
@@ -880,11 +882,12 @@ def export_mantenimiento(request, format):
                 mant.fecha_realizacion.strftime(
                     '%Y-%m-%d') if mant.fecha_realizacion else 'Pendiente',
                 mant.responsable.get_full_name() if mant.responsable else '',
-                mant.get_estado_display()
+                mant.get_estado_display(),
+                f"${mant.costo}" if mant.costo else "No especificado"
             ])
 
         # Crear tabla
-        table = Table(data)
+        table = Table(data, repeatRows=1)
         table.setStyle(TableStyle([
             ('BACKGROUND', (0, 0), (-1, 0), colors.blue),
             ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
@@ -897,6 +900,25 @@ def export_mantenimiento(request, format):
 
         elements.append(table)
 
+        # Resumen
+        elements.append(Spacer(1, 20))
+        elements.append(Paragraph("Resumen", subtitle_style))
+        elements.append(Spacer(1, 6))
+
+        # Calcular estadísticas
+        completados = mantenimientos.filter(estado='completado').count()
+        pendientes = mantenimientos.filter(
+            Q(estado='programado') | Q(estado='en_proceso')).count()
+        costo_total = mantenimientos.aggregate(
+            total=Sum('costo'))['total'] or 0
+
+        elements.append(
+            Paragraph(f"Total de mantenimientos: {mantenimientos.count()}", normal_style))
+        elements.append(Paragraph(f"Completados: {completados}", normal_style))
+        elements.append(Paragraph(f"Pendientes: {pendientes}", normal_style))
+        elements.append(
+            Paragraph(f"Costo total: ${costo_total:.2f}", normal_style))
+
         # Construir PDF
         doc.build(elements)
         pdf = buffer.getvalue()
@@ -906,13 +928,13 @@ def export_mantenimiento(request, format):
         return response
 
     else:
-        # Si no se pudo exportar, redirigir al reporte HTML
-        return redirect('mantenimiento_report_result')
+        # Por defecto, exportar como PDF
+        return export_mantenimiento(request, 'pdf')
 
 
 @login_required
 def export_diagnostico(request, format):
-    """Exportar reporte de diagnóstico a diferentes formatos"""
+    """Exportar reporte de diagnóstico a PDF o Excel"""
     try:
         from diagnostico.models import Diagnostico, Indicador
 
@@ -934,28 +956,7 @@ def export_diagnostico(request, format):
         if fecha_fin:
             diagnosticos = diagnosticos.filter(fecha__lte=fecha_fin)
 
-        if format == 'csv':
-            # Crear respuesta CSV
-            response = HttpResponse(content_type='text/csv')
-            response['Content-Disposition'] = 'attachment; filename="diagnostico.csv"'
-
-            writer = csv.writer(response)
-            writer.writerow(['ID', 'Departamento', 'Cuestionario', 'Fecha',
-                            'Responsable', 'Nivel General'])
-
-            for diag in diagnosticos:
-                writer.writerow([
-                    diag.id,
-                    diag.departamento.nombre,
-                    diag.cuestionario.titulo,
-                    diag.fecha.strftime('%Y-%m-%d %H:%M'),
-                    diag.responsable.get_full_name() if diag.responsable else '',
-                    diag.nivel_general or 0
-                ])
-
-            return response
-
-        elif format == 'excel' and xlsxwriter:
+        if format == 'excel' and xlsxwriter:
             # Crear respuesta Excel
             output = BytesIO()
             workbook = xlsxwriter.Workbook(output)
@@ -1017,7 +1018,7 @@ def export_diagnostico(request, format):
             response['Content-Disposition'] = 'attachment; filename="diagnostico.xlsx"'
             return response
 
-        elif format == 'pdf' and reportlab:
+        elif format == 'pdf':
             # Crear respuesta PDF
             response = HttpResponse(content_type='application/pdf')
             response['Content-Disposition'] = 'attachment; filename="diagnostico.pdf"'
@@ -1030,10 +1031,36 @@ def export_diagnostico(request, format):
             styles = getSampleStyleSheet()
             title_style = styles['Heading1']
             subtitle_style = styles['Heading2']
+            normal_style = styles['Normal']
 
             # Título
             elements.append(
                 Paragraph("Reporte de Transformación Digital", title_style))
+            elements.append(Spacer(1, 12))
+
+            # Filtros aplicados
+            filtros = []
+            if departamento:
+                dept_name = Departamento.objects.filter(
+                    id=departamento).first()
+                if dept_name:
+                    filtros.append(f"Departamento: {dept_name.nombre}")
+            if fecha_inicio:
+                filtros.append(f"Desde: {fecha_inicio}")
+            if fecha_fin:
+                filtros.append(f"Hasta: {fecha_fin}")
+
+            if filtros:
+                elements.append(
+                    Paragraph("Filtros aplicados: " + ", ".join(filtros), normal_style))
+                elements.append(Spacer(1, 12))
+
+            # Calcular nivel general
+            nivel_general = diagnosticos.aggregate(Avg('nivel_general'))[
+                'nivel_general__avg'] or 0
+
+            elements.append(Paragraph(
+                f"Nivel General de Transformación Digital: {nivel_general:.2f}/5", subtitle_style))
             elements.append(Spacer(1, 12))
 
             # Datos para la tabla de diagnósticos
@@ -1052,7 +1079,7 @@ def export_diagnostico(request, format):
                 ])
 
             # Crear tabla
-            table = Table(data)
+            table = Table(data, repeatRows=1)
             table.setStyle(TableStyle([
                 ('BACKGROUND', (0, 0), (-1, 0), colors.blue),
                 ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
@@ -1066,12 +1093,46 @@ def export_diagnostico(request, format):
             elements.append(table)
             elements.append(Spacer(1, 12))
 
-            # Calcular nivel general
-            nivel_general = diagnosticos.aggregate(Avg('nivel_general'))[
-                'nivel_general__avg'] or 0
+            # Recomendaciones basadas en el nivel
+            elements.append(Paragraph("Recomendaciones", subtitle_style))
+            elements.append(Spacer(1, 6))
 
-            elements.append(
-                Paragraph(f"Nivel General: {nivel_general:.2f}/5", subtitle_style))
+            if nivel_general < 2:
+                elements.append(Paragraph(
+                    "La institución se encuentra en un nivel básico de transformación digital. Es necesario implementar acciones inmediatas para mejorar.", normal_style))
+                elements.append(Paragraph(
+                    "• Desarrollar un plan estratégico de transformación digital", normal_style))
+                elements.append(
+                    Paragraph("• Actualizar la infraestructura tecnológica básica", normal_style))
+                elements.append(Paragraph(
+                    "• Capacitar al personal en competencias digitales básicas", normal_style))
+            elif nivel_general < 3:
+                elements.append(Paragraph(
+                    "La institución se encuentra en un nivel medio-bajo de transformación digital. Se requiere mayor avance.", normal_style))
+                elements.append(Paragraph(
+                    "• Fortalecer la infraestructura tecnológica existente", normal_style))
+                elements.append(
+                    Paragraph("• Digitalizar procesos administrativos clave", normal_style))
+                elements.append(Paragraph(
+                    "• Desarrollar políticas de gestión de datos institucionales", normal_style))
+            elif nivel_general < 4:
+                elements.append(Paragraph(
+                    "La institución se encuentra en un nivel medio-alto de transformación digital. Se pueden optimizar algunos procesos.", normal_style))
+                elements.append(
+                    Paragraph("• Integrar los sistemas digitales existentes", normal_style))
+                elements.append(
+                    Paragraph("• Implementar soluciones de analítica avanzada", normal_style))
+                elements.append(
+                    Paragraph("• Optimizar la experiencia digital del estudiante", normal_style))
+            else:
+                elements.append(Paragraph(
+                    "La institución se encuentra en un nivel alto de transformación digital. Se recomienda mantenimiento y mejora continua.", normal_style))
+                elements.append(Paragraph(
+                    "• Mantener actualizadas las tecnologías implementadas", normal_style))
+                elements.append(Paragraph(
+                    "• Compartir buenas prácticas con otras instituciones", normal_style))
+                elements.append(
+                    Paragraph("• Reforzar las políticas de ciberseguridad", normal_style))
 
             # Construir PDF
             doc.build(elements)
@@ -1082,8 +1143,8 @@ def export_diagnostico(request, format):
             return response
 
         else:
-            # Si no se pudo exportar, redirigir al reporte HTML
-            return redirect('transformacion_digital_report_result')
+            # Por defecto, exportar como PDF
+            return export_diagnostico(request, 'pdf')
 
     except ImportError:
         # Si no existe el módulo de diagnóstico

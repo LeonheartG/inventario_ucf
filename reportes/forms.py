@@ -51,12 +51,10 @@ class InventarioReportForm(forms.Form):
     )
     formato = forms.ChoiceField(
         choices=[
-            ('html', 'HTML'),
             ('pdf', 'PDF'),
-            ('csv', 'CSV'),
             ('excel', 'Excel')
         ],
-        initial='html',
+        initial='pdf',
         label='Formato'
     )
 
@@ -100,12 +98,10 @@ class MantenimientoReportForm(forms.Form):
     )
     formato = forms.ChoiceField(
         choices=[
-            ('html', 'HTML'),
             ('pdf', 'PDF'),
-            ('csv', 'CSV'),
             ('excel', 'Excel')
         ],
-        initial='html',
+        initial='pdf',
         label='Formato'
     )
 
@@ -129,12 +125,10 @@ class TransformacionDigitalReportForm(forms.Form):
     )
     formato = forms.ChoiceField(
         choices=[
-            ('html', 'HTML'),
             ('pdf', 'PDF'),
-            ('csv', 'CSV'),
             ('excel', 'Excel')
         ],
-        initial='html',
+        initial='pdf',
         label='Formato'
     )
 
