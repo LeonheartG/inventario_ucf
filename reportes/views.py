@@ -41,26 +41,47 @@ def index(request):
 @login_required
 def dashboard(request):
     """Dashboard principal con indicadores clave"""
-    # Datos para el dashboard
-    total_activos = Activo.objects.count()
-    total_hardware = Hardware.objects.count()
-    total_software = Software.objects.count()
+    # Datos para el dashboard - mejorar conteo de activos
+    hardware_ids = Hardware.objects.values_list('activo_id', flat=True)
+    software_ids = Software.objects.values_list('activo_id', flat=True)
+    valid_ids = list(hardware_ids) + list(software_ids)
+
+    # Contar solo activos válidos y no dados de baja
+    total_activos = Activo.objects.filter(
+        id__in=valid_ids
+    ).exclude(
+        estado='baja'
+    ).count()
+
+    total_hardware = Hardware.objects.select_related('activo').filter(
+        activo__estado__in=['activo', 'en_mantenimiento', 'obsoleto']
+    ).count()
+
+    total_software = Software.objects.select_related('activo').filter(
+        activo__estado__in=['activo', 'en_mantenimiento', 'obsoleto']
+    ).count()
 
     # Mantenimientos pendientes
     mantenimientos_pendientes = Mantenimiento.objects.filter(
         Q(estado='programado') | Q(estado='en_proceso')
     ).count()
 
-    # Activos por departamento
-    activos_por_departamento = Activo.objects.values(
+    # Activos por departamento - mejorar filtrado
+    activos_por_departamento = Activo.objects.filter(
+        id__in=valid_ids
+    ).exclude(
+        estado='baja'
+    ).values(
         'departamento__nombre'
     ).annotate(
         total=Count('id'),
         porcentaje=Count('id') * 100.0 / total_activos if total_activos else 0
     ).order_by('-total')
 
-    # Activos por estado
-    activos_por_estado = Activo.objects.values(
+    # Activos por estado - mejorar filtrado
+    activos_por_estado = Activo.objects.filter(
+        id__in=valid_ids
+    ).values(
         'estado'
     ).annotate(
         total=Count('id'),
@@ -73,7 +94,9 @@ def dashboard(request):
     software_por_vencer = Software.objects.filter(
         fecha_vencimiento__isnull=False,
         fecha_vencimiento__gte=hoy,
-        fecha_vencimiento__lte=treinta_dias
+        fecha_vencimiento__lte=treinta_dias,
+        # Solo contar activos válidos
+        activo__estado__in=['activo', 'en_mantenimiento']
     ).select_related('activo').order_by('fecha_vencimiento')
 
     # Añadir días restantes
@@ -101,9 +124,13 @@ def dashboard(request):
     except:
         nivel_transformacion = 0
 
-    # Datos para gráficos
+    # Datos para gráficos - mejorar filtrado
     # Crear datos para gráfico de activos por mes
-    activos_por_mes = Activo.objects.annotate(
+    activos_por_mes = Activo.objects.filter(
+        id__in=valid_ids
+    ).exclude(
+        estado='baja'
+    ).annotate(
         mes=TruncMonth('fecha_adquisicion')
     ).values('mes').annotate(
         total=Count('id')
