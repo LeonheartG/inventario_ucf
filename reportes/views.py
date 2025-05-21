@@ -17,11 +17,20 @@ from locales.models import Local, Equipamiento
 from usuarios.models import Departamento
 from diagnostico.models import Diagnostico, IndicadorDiagnostico as Indicador
 
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Table, TableStyle, Image, Spacer
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.lib import colors
-from reportlab.lib.pagesizes import letter, landscape
-from reportlab.lib.units import inch
+# Librerías para exportación
+try:
+    import xlsxwriter
+except ImportError:
+    xlsxwriter = None
+
+try:
+    from reportlab.platypus import SimpleDocTemplate, Paragraph, Table, TableStyle, Image, Spacer
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.lib import colors
+    from reportlab.lib.pagesizes import letter, landscape
+    from reportlab.lib.units import inch
+except ImportError:
+    reportlab = None
 
 
 @login_required
