@@ -15,7 +15,7 @@ import os
 from inventario.models import Activo, Hardware, Software, Mantenimiento, Proveedor
 from locales.models import Local, Equipamiento
 from usuarios.models import Departamento
-from diagnostico.models import Diagnostico, Indicador
+from diagnostico.models import Diagnostico, IndicadorDiagnostico as Indicador
 
 # Librerías para exportación
 try:
