@@ -11,7 +11,7 @@ class PerfilUsuarioInline(admin.StackedInline):
     model = PerfilUsuario
     can_delete = False
     verbose_name_plural = 'Perfil de Usuario'
-    fields = ('departamento', 'rol', 'cargo', 'telefono', 'foto')
+    fields = ('departamento', 'rol', 'telefono', 'foto')
     extra = 0
 
 
@@ -63,10 +63,10 @@ class DepartamentoAdmin(admin.ModelAdmin):
 @admin.register(PerfilUsuario)
 class PerfilUsuarioAdmin(admin.ModelAdmin):
     list_display = ('get_usuario_info', 'departamento',
-                    'rol', 'cargo', 'fecha_registro')
+                    'rol', 'fecha_registro')
     list_filter = ('departamento', 'rol', 'fecha_registro')
     search_fields = ('usuario__username', 'usuario__first_name', 'usuario__last_name',
-                     'usuario__email', 'cargo')
+                     'usuario__email')
     readonly_fields = ('fecha_registro', 'ultimo_acceso')
     ordering = ('-fecha_registro',)
 

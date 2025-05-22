@@ -39,7 +39,6 @@ class PerfilUsuario(models.Model):
     fecha_registro = models.DateTimeField(auto_now_add=True)
     ultimo_acceso = models.DateTimeField(null=True, blank=True)
     telefono = models.CharField(max_length=20, blank=True, null=True)
-    cargo = models.CharField(max_length=100, blank=True, null=True)
     foto = models.ImageField(upload_to='perfiles/', blank=True, null=True)
 
     def __str__(self):

@@ -17,6 +17,9 @@
             <form method="get" class="d-flex mt-2 mt-md-0">
                 <div class="input-group">
                     <input type="text" class="form-control" placeholder="Buscar..." name="search" value="{{ search }}">
+                    <span class="input-group-text">
+                        <i class="fas fa-search"></i>
+                    </span>
                     <select class="form-select" name="departamento" style="max-width: 200px;">
                         <option value="">Todos los departamentos</option>
                         {% for dept in departamentos %}

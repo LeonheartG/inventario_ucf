@@ -78,13 +78,6 @@ class RegistroForm(UserCreationForm):
         widget=forms.Select(attrs={'class': 'form-control'})
     )
 
-    cargo = forms.CharField(
-        max_length=100,
-        required=False,
-        label='Cargo',
-        widget=forms.TextInput(attrs={'class': 'form-control'})
-    )
-
     telefono = forms.CharField(
         max_length=20,
         required=False,
@@ -151,11 +144,10 @@ class PerfilForm(forms.ModelForm):
 
     class Meta:
         model = PerfilUsuario
-        fields = ('departamento', 'telefono', 'cargo', 'foto')
+        fields = ('departamento', 'telefono', 'foto')
         widgets = {
             'departamento': forms.Select(attrs={'class': 'form-control'}),
             'telefono': forms.TextInput(attrs={'class': 'form-control'}),
-            'cargo': forms.TextInput(attrs={'class': 'form-control'}),
             'foto': forms.FileInput(attrs={'class': 'form-control'}),
         }
 

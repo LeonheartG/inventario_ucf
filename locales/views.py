@@ -40,10 +40,14 @@ def local_update(request, pk):
         # Crear formulario con la instancia - se auto-llenan los campos
         form = LocalForm(instance=local)
 
+    # AGREGAR DEPARTAMENTOS AL CONTEXTO
+    departamentos = Departamento.objects.all()
+
     return render(request, 'locales/local_form.html', {
         'form': form,
         'local': local,
-        'is_new': False
+        'is_new': False,
+        'departamentos': departamentos
     })
 
 
@@ -76,9 +80,13 @@ def local_create(request):
     else:
         form = LocalForm()
 
+    # AGREGAR DEPARTAMENTOS AL CONTEXTO
+    departamentos = Departamento.objects.all()
+
     return render(request, 'locales/local_form.html', {
         'form': form,
-        'is_new': True
+        'is_new': True,
+        'departamentos': departamentos
     })
 
 

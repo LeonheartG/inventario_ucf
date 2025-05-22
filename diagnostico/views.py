@@ -166,10 +166,14 @@ def evaluacion_list(request):
     if departamento:
         diagnosticos = diagnosticos.filter(departamento_id=departamento)
 
+    # AGREGAR DEPARTAMENTOS PARA EL DROPDOWN
+    departamentos = Departamento.objects.all()
+
     return render(request, 'diagnostico/evaluacion_list.html', {
         'diagnosticos': diagnosticos,
         'search': search,
-        'departamento': departamento
+        'departamento': departamento,
+        'departamentos': departamentos
     })
 
 
@@ -331,10 +335,14 @@ def indicador_list(request):
         indicadores = indicadores.filter(
             diagnostico__departamento_id=departamento)
 
+    # AGREGAR DEPARTAMENTOS PARA EL DROPDOWN
+    departamentos = Departamento.objects.all()
+
     return render(request, 'diagnostico/indicador_list.html', {
         'indicadores': indicadores,
         'search': search,
-        'departamento': departamento
+        'departamento': departamento,
+        'departamentos': departamentos
     })
 
 
