@@ -5,82 +5,170 @@
 {% block content %}
 <div class="container">
     <div class="row">
+        <!-- Información del Usuario -->
         <div class="col-lg-4">
             <div class="card mb-4">
                 <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0">Información Personal</h5>
+                    <h5 class="mb-0">
+                        <i class="fas fa-user me-2"></i>
+                        Información Personal
+                    </h5>
                 </div>
                 <div class="card-body text-center">
-                    <img src="{{ user.perfil.foto.url|default:'/static/img/default-profile.png' }}" alt="Foto de perfil" 
-                         class="rounded-circle img-fluid" style="width: 150px;">
-                    <h5 class="my-3">{{ user.get_full_name }}</h5>
-                    <p class="text-muted mb-1">{{ user.perfil.cargo|default:"No especificado" }}</p>
-                    <p class="text-muted mb-4">{{ user.perfil.departamento|default:"No asignado" }}</p>
-                    <div class="d-flex justify-content-center mb-2">
-                        <button type="button" class="btn btn-primary">Editar Perfil</button>
-                    </div>
+                    {% if user.perfil.foto and user.perfil.foto.url %}
+                        <img src="{{ user.perfil.foto.url }}" 
+                             alt="Foto de perfil" class="rounded-circle img-fluid mb-3" 
+                             style="width: 150px; height: 150px; object-fit: cover;">
+                    {% else %}
+                        <img src="/static/img/default-profile.png" 
+                             alt="Foto de perfil por defecto" class="rounded-circle img-fluid mb-3" 
+                             style="width: 150px; height: 150px; object-fit: cover;">
+                    {% endif %}
+                    <h5 class="mb-1">{{ user.get_full_name|default:user.username }}</h5>
+                    <p class="text-muted mb-1">{{ user.perfil.cargo|default:"Cargo no especificado" }}</p>
+                    <p class="text-muted mb-3">{{ user.perfil.departamento.nombre|default:"Departamento no asignado" }}</p>
+                    <span class="badge bg-primary">{{ user.perfil.rol.nombre|default:"Rol no asignado" }}</span>
                 </div>
             </div>
         </div>
+
+        <!-- Detalles y Formulario de Edición -->
         <div class="col-lg-8">
+            <!-- Mensajes -->
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                        <i class="fas fa-{% if message.tags == 'success' %}check-circle{% elif message.tags == 'error' or message.tags == 'danger' %}exclamation-triangle{% else %}info-circle{% endif %} me-2"></i>
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            <!-- Información de la cuenta -->
             <div class="card mb-4">
                 <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0">Detalles de la Cuenta</h5>
+                    <h5 class="mb-0">
+                        <i class="fas fa-id-card me-2"></i>
+                        Detalles de la Cuenta
+                    </h5>
                 </div>
                 <div class="card-body">
-                    <div class="row">
-                        <div class="col-sm-3">
-                            <p class="mb-0">Nombre Completo</p>
-                        </div>
-                        <div class="col-sm-9">
-                            <p class="text-muted mb-0">{{ user.get_full_name }}</p>
-                        </div>
+                    <div class="row mb-2">
+                        <div class="col-sm-4"><strong>Nombre completo:</strong></div>
+                        <div class="col-sm-8">{{ user.get_full_name|default:"No especificado" }}</div>
                     </div>
-                    <hr>
-                    <div class="row">
-                        <div class="col-sm-3">
-                            <p class="mb-0">Email</p>
-                        </div>
-                        <div class="col-sm-9">
-                            <p class="text-muted mb-0">{{ user.email }}</p>
-                        </div>
+                    <div class="row mb-2">
+                        <div class="col-sm-4"><strong>Usuario:</strong></div>
+                        <div class="col-sm-8">{{ user.username }}</div>
                     </div>
-                    <hr>
-                    <div class="row">
-                        <div class="col-sm-3">
-                            <p class="mb-0">Teléfono</p>
-                        </div>
-                        <div class="col-sm-9">
-                            <p class="text-muted mb-0">{{ user.perfil.telefono|default:"No especificado" }}</p>
-                        </div>
+                    <div class="row mb-2">
+                        <div class="col-sm-4"><strong>Email:</strong></div>
+                        <div class="col-sm-8">{{ user.email|default:"No especificado" }}</div>
                     </div>
-                    <hr>
-                    <div class="row">
-                        <div class="col-sm-3">
-                            <p class="mb-0">Cargo</p>
-                        </div>
-                        <div class="col-sm-9">
-                            <p class="text-muted mb-0">{{ user.perfil.cargo|default:"No especificado" }}</p>
-                        </div>
+                    <div class="row mb-2">
+                        <div class="col-sm-4"><strong>Teléfono:</strong></div>
+                        <div class="col-sm-8">{{ user.perfil.telefono|default:"No especificado" }}</div>
                     </div>
-                    <hr>
-                    <div class="row">
-                        <div class="col-sm-3">
-                            <p class="mb-0">Departamento</p>
-                        </div>
-                        <div class="col-sm-9">
-                            <p class="text-muted mb-0">{{ user.perfil.departamento|default:"No asignado" }}</p>
-                        </div>
+                    <div class="row mb-2">
+                        <div class="col-sm-4"><strong>Miembro desde:</strong></div>
+                        <div class="col-sm-8">{{ user.date_joined|date:"d/m/Y" }}</div>
                     </div>
-                    <hr>
-                    <div class="row">
-                        <div class="col-sm-3">
-                            <p class="mb-0">Rol</p>
+                </div>
+            </div>
+
+            <!-- Formulario de edición -->
+            <div class="card mb-4">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-edit me-2"></i>
+                        Editar Perfil
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        
+                        <div class="row mb-3">
+                            <div class="col-sm-6">
+                                <label for="{{ form.telefono.id_for_label }}" class="form-label">
+                                    {{ form.telefono.label }}
+                                </label>
+                                {{ form.telefono }}
+                                {% if form.telefono.errors %}
+                                    <div class="text-danger small mt-1">
+                                        {% for error in form.telefono.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-sm-6">
+                                <label for="{{ form.cargo.id_for_label }}" class="form-label">
+                                    {{ form.cargo.label }}
+                                </label>
+                                {{ form.cargo }}
+                                {% if form.cargo.errors %}
+                                    <div class="text-danger small mt-1">
+                                        {% for error in form.cargo.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
                         </div>
-                        <div class="col-sm-9">
-                            <p class="text-muted mb-0">{{ user.perfil.rol|default:"No asignado" }}</p>
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.departamento.id_for_label }}" class="form-label">
+                                {{ form.departamento.label }}
+                            </label>
+                            {{ form.departamento }}
+                            {% if form.departamento.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.departamento.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
                         </div>
-                    </div>
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.foto.id_for_label }}" class="form-label">
+                                {{ form.foto.label }}
+                            </label>
+                            {{ form.foto }}
+                            <div class="form-text">Formatos admitidos: JPG, PNG, GIF. Tamaño máximo: 5MB</div>
+                            {% if form.foto.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.foto.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-save me-1"></i>
+                            Guardar Cambios
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Cambiar contraseña -->
+            <div class="card">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0">
+                        <i class="fas fa-key me-2"></i>
+                        Seguridad
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted mb-3">Mantén tu cuenta segura cambiando tu contraseña regularmente.</p>
+                    <a href="{% url 'cambiar_password' %}" class="btn btn-warning">
+                        <i class="fas fa-lock me-1"></i>
+                        Cambiar Contraseña
+                    </a>
                 </div>
             </div>
         </div>

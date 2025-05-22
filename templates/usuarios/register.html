@@ -8,45 +8,181 @@
         <div class="col-lg-6 col-md-8">
             <div class="card shadow-lg mt-4">
                 <div class="card-header bg-primary text-white text-center py-3">
-                    <h3 class="mb-0">Registro de Usuario</h3>
+                    <h3 class="mb-0">
+                        <i class="fas fa-user-plus me-2"></i>
+                        Registro de Usuario
+                    </h3>
                 </div>
                 <div class="card-body p-4">
+                    <!-- Mostrar mensajes del sistema -->
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show" role="alert">
+                                <i class="fas fa-{% if message.tags == 'success' %}check-circle{% elif message.tags == 'error' or message.tags == 'danger' %}exclamation-triangle{% else %}info-circle{% endif %} me-2"></i>
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                    
                     <form method="post">
                         {% csrf_token %}
+                        
+                        <!-- Información Personal -->
+                        <h5 class="mb-3 text-primary">
+                            <i class="fas fa-user me-2"></i>
+                            Información Personal
+                        </h5>
+                        
                         <div class="row">
                             <div class="col-md-6 mb-3">
-                                <label for="first_name" class="form-label">Nombre</label>
-                                <input type="text" class="form-control" id="first_name" name="first_name" required>
+                                <label for="{{ form.first_name.id_for_label }}" class="form-label">
+                                    {{ form.first_name.label }} <span class="text-danger">*</span>
+                                </label>
+                                {{ form.first_name }}
+                                {% if form.first_name.errors %}
+                                    <div class="text-danger small mt-1">
+                                        {% for error in form.first_name.errors %}
+                                            <i class="fas fa-exclamation-circle me-1"></i>{{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
                             </div>
                             <div class="col-md-6 mb-3">
-                                <label for="last_name" class="form-label">Apellidos</label>
-                                <input type="text" class="form-control" id="last_name" name="last_name" required>
+                                <label for="{{ form.last_name.id_for_label }}" class="form-label">
+                                    {{ form.last_name.label }} <span class="text-danger">*</span>
+                                </label>
+                                {{ form.last_name }}
+                                {% if form.last_name.errors %}
+                                    <div class="text-danger small mt-1">
+                                        {% for error in form.last_name.errors %}
+                                            <i class="fas fa-exclamation-circle me-1"></i>{{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
                             </div>
                         </div>
+                        
                         <div class="mb-3">
-                            <label for="username" class="form-label">Nombre de usuario</label>
-                            <input type="text" class="form-control" id="username" name="username" required>
+                            <label for="{{ form.email.id_for_label }}" class="form-label">
+                                {{ form.email.label }} <span class="text-danger">*</span>
+                            </label>
+                            {{ form.email }}
+                            {% if form.email.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.email.errors %}
+                                        <i class="fas fa-exclamation-circle me-1"></i>{{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
                         </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.departamento.id_for_label }}" class="form-label">
+                                    {{ form.departamento.label }} <span class="text-danger">*</span>
+                                </label>
+                                {{ form.departamento }}
+                                {% if form.departamento.errors %}
+                                    <div class="text-danger small mt-1">
+                                        {% for error in form.departamento.errors %}
+                                            <i class="fas fa-exclamation-circle me-1"></i>{{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.cargo.id_for_label }}" class="form-label">
+                                    {{ form.cargo.label }}
+                                </label>
+                                {{ form.cargo }}
+                                {% if form.cargo.errors %}
+                                    <div class="text-danger small mt-1">
+                                        {% for error in form.cargo.errors %}
+                                            <i class="fas fa-exclamation-circle me-1"></i>{{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="{{ form.telefono.id_for_label }}" class="form-label">
+                                {{ form.telefono.label }}
+                            </label>
+                            {{ form.telefono }}
+                            {% if form.telefono.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.telefono.errors %}
+                                        <i class="fas fa-exclamation-circle me-1"></i>{{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Credenciales de Acceso -->
+                        <h5 class="mb-3 text-primary">
+                            <i class="fas fa-key me-2"></i>
+                            Credenciales de Acceso
+                        </h5>
+                        
                         <div class="mb-3">
-                            <label for="email" class="form-label">Correo electrónico</label>
-                            <input type="email" class="form-control" id="email" name="email" required>
+                            <label for="{{ form.username.id_for_label }}" class="form-label">
+                                {{ form.username.label }} <span class="text-danger">*</span>
+                            </label>
+                            {{ form.username }}
+                            {% if form.username.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.username.errors %}
+                                        <i class="fas fa-exclamation-circle me-1"></i>{{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
                         </div>
+                        
                         <div class="mb-3">
-                            <label for="password1" class="form-label">Contraseña</label>
-                            <input type="password" class="form-control" id="password1" name="password1" required>
+                            <label for="{{ form.password1.id_for_label }}" class="form-label">
+                                {{ form.password1.label }} <span class="text-danger">*</span>
+                            </label>
+                            {{ form.password1 }}
+                            <small class="form-text text-muted">Mínimo 8 caracteres</small>
+                            {% if form.password1.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.password1.errors %}
+                                        <i class="fas fa-exclamation-circle me-1"></i>{{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
                         </div>
-                        <div class="mb-3">
-                            <label for="password2" class="form-label">Confirmar contraseña</label>
-                            <input type="password" class="form-control" id="password2" name="password2" required>
+                        
+                        <div class="mb-4">
+                            <label for="{{ form.password2.id_for_label }}" class="form-label">
+                                {{ form.password2.label }} <span class="text-danger">*</span>
+                            </label>
+                            {{ form.password2 }}
+                            {% if form.password2.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.password2.errors %}
+                                        <i class="fas fa-exclamation-circle me-1"></i>{{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
                         </div>
+
                         <div class="d-grid gap-2">
-                            <button type="submit" class="btn btn-primary">Registrarse</button>
+                            <button type="submit" class="btn btn-success">
+                                <i class="fas fa-user-plus me-2"></i>
+                                Crear Cuenta
+                            </button>
                         </div>
                     </form>
                 </div>
                 <div class="card-footer text-center bg-light py-3">
                     <div class="small">
-                        <a href="{% url 'login' %}">¿Ya tiene una cuenta? ¡Inicie sesión!</a>
+                        ¿Ya tiene una cuenta? 
+                        <a href="{% url 'login' %}" class="text-decoration-none">
+                            ¡Inicie sesión aquí!
+                        </a>
                     </div>
                 </div>
             </div>
