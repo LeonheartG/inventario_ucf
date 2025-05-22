@@ -11,10 +11,11 @@ from .forms import RegistroForm, PerfilForm, LoginForm, CambiarPasswordForm
 
 
 def index(request):
-    """Vista principal de la aplicación"""
+    """Vista principal de la aplicación - redirige al login si no está autenticado"""
     if request.user.is_authenticated:
         return redirect('dashboard')
-    return render(request, 'usuarios/index.html')
+    else:
+        return redirect('login')
 
 
 def login_view(request):

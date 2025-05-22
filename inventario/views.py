@@ -152,23 +152,8 @@ def hardware_update(request, pk):
                     messages.error(
                         request, f'Error en el campo {field}: {error}')
     else:
-        # Inicializar el formulario con los datos del activo y hardware
-        initial_data = {
-            'nombre': hardware.activo.nombre,
-            'descripcion': hardware.activo.descripcion,
-            'fecha_adquisicion': hardware.activo.fecha_adquisicion,
-            'valor_adquisicion': hardware.activo.valor_adquisicion,
-            'estado': hardware.activo.estado,
-            'departamento': hardware.activo.departamento,
-            'ubicacion': hardware.activo.ubicacion,
-            'marca': hardware.marca,
-            'modelo': hardware.modelo,
-            'numero_serie': hardware.numero_serie,
-            'especificaciones': hardware.especificaciones,
-            'fecha_garantia': hardware.fecha_garantia,
-            'periodicidad_mantenimiento': hardware.periodicidad_mantenimiento
-        }
-        form = HardwareForm(instance=hardware, initial=initial_data)
+        # Crear formulario con la instancia - el __init__ se encarga de cargar los datos
+        form = HardwareForm(instance=hardware)
 
     return render(request, 'inventario/hardware_form.html', {'form': form, 'hardware': hardware, 'is_new': False})
 
@@ -307,71 +292,37 @@ def software_detail(request, pk):
 
 @login_required
 def software_update(request, pk):
-    """Actualizar software con enfoque directo"""
+    """Actualizar software"""
     software = get_object_or_404(Software, activo_id=pk)
-    activo = software.activo
 
     if request.method == 'POST':
-        try:
-            # Actualizar activo
-            activo.nombre = request.POST.get('nombre')
-            activo.descripcion = request.POST.get('descripcion', '')
-            activo.fecha_adquisicion = request.POST.get('fecha_adquisicion')
-            activo.valor_adquisicion = request.POST.get('valor_adquisicion')
-            activo.estado = request.POST.get('estado')
-            activo.departamento_id = request.POST.get('departamento')
-            activo.ubicacion = request.POST.get('ubicacion', '')
-            activo.actualizado_por = request.user
+        form = SoftwareForm(request.POST, request.FILES, instance=software)
+        if form.is_valid():
+            try:
+                software = form.save(user=request.user)
 
-            if 'imagen' in request.FILES:
-                activo.imagen = request.FILES['imagen']
+                # Registrar actividad
+                LogActividad.objects.create(
+                    usuario=request.user,
+                    accion=f"Actualización de software: {software.activo.nombre}",
+                    detalles=f"Software versión {software.version} con licencia {software.get_tipo_licencia_display()}"
+                )
 
-            activo.save()
-
-            # Actualizar software
-            software.version = request.POST.get('version')
-            software.tipo_licencia = request.POST.get('tipo_licencia')
-            software.clave_activacion = request.POST.get(
-                'clave_activacion', '')
-            software.numero_licencias = int(
-                request.POST.get('numero_licencias', 1))
-
-            if request.POST.get('fecha_vencimiento'):
-                software.fecha_vencimiento = request.POST.get(
-                    'fecha_vencimiento')
-            else:
-                software.fecha_vencimiento = None
-
-            software.save()
-
-            # Registrar actividad
-            LogActividad.objects.create(
-                usuario=request.user,
-                accion=f"Actualización de software: {activo.nombre}",
-                detalles=f"Software versión {software.version} con licencia {software.get_tipo_licencia_display()}"
-            )
-
-            messages.success(request, 'Software actualizado correctamente.')
-            return redirect('software_detail', pk=activo.id)
-        except Exception as e:
-            print(f"Error al actualizar software: {str(e)}")
-            messages.error(request, f'Error al actualizar software: {str(e)}')
-
-    # Si es GET o si hubo un error en POST
-    form = SoftwareForm(instance=software, initial={
-        'nombre': activo.nombre,
-        'descripcion': activo.descripcion,
-        'fecha_adquisicion': activo.fecha_adquisicion,
-        'valor_adquisicion': activo.valor_adquisicion,
-        'estado': activo.estado,
-        'departamento': activo.departamento,
-        'ubicacion': activo.ubicacion,
-        'version': software.version,
-        'tipo_licencia': software.tipo_licencia,
-        'clave_activacion': software.clave_activacion,
-        'fecha_vencimiento': software.fecha_vencimiento,
-        'numero_licencias': software.numero_licencias
-    })
+                messages.success(
+                    request, 'Software actualizado correctamente.')
+                return redirect('software_detail', pk=software.activo_id)
+            except Exception as e:
+                print(f"Error al actualizar software: {str(e)}")
+                messages.error(
+                    request, f'Error al actualizar software: {str(e)}')
+        else:
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(
+                        request, f'Error en el campo {field}: {error}')
+    else:
+        # Crear formulario con la instancia - el __init__ se encarga de cargar los datos
+        form = SoftwareForm(instance=software)
 
     return render(request, 'inventario/software_form.html', {'form': form, 'software': software, 'is_new': False})
 

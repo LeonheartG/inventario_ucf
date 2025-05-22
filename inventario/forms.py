@@ -1,5 +1,5 @@
-# inventario/forms.py
 from django import forms
+from decimal import Decimal
 from .models import Activo, Hardware, Software
 from usuarios.models import Departamento, LogActividad
 
@@ -9,7 +9,16 @@ class HardwareForm(forms.ModelForm):
     descripcion = forms.CharField(widget=forms.Textarea, required=False)
     fecha_adquisicion = forms.DateField(
         widget=forms.DateInput(attrs={'type': 'date'}))
-    valor_adquisicion = forms.DecimalField(max_digits=10, decimal_places=2)
+    valor_adquisicion = forms.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        localize=False,
+        widget=forms.NumberInput(attrs={
+            'class': 'form-control',
+            'step': '0.01',
+            'min': '0'
+        })
+    )
     estado = forms.ChoiceField(choices=Activo.ESTADO_CHOICES)
     departamento = forms.ModelChoiceField(queryset=Departamento.objects.all())
     ubicacion = forms.CharField(max_length=100, required=False)
@@ -27,15 +36,49 @@ class HardwareForm(forms.ModelForm):
         model = Hardware
         fields = []
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # Agregar clases CSS a todos los campos
+        for field_name, field in self.fields.items():
+            if not isinstance(field.widget, forms.CheckboxInput):
+                field.widget.attrs['class'] = 'form-control'
+
+        # Si tenemos una instancia (estamos editando), cargar los datos
+        if self.instance and self.instance.pk:
+            activo = self.instance.activo
+
+            # Establecer valores iniciales para los campos del activo
+            self.initial['nombre'] = activo.nombre
+            self.initial['descripcion'] = activo.descripcion
+            self.initial['fecha_adquisicion'] = activo.fecha_adquisicion
+
+            # CLAVE: Convertir explícitamente a formato con punto decimal
+            valor_decimal = activo.valor_adquisicion
+            if isinstance(valor_decimal, Decimal):
+                # Convertir a string con formato americano (punto decimal)
+                valor_formateado = str(valor_decimal).replace(',', '.')
+                self.initial['valor_adquisicion'] = valor_formateado
+            else:
+                self.initial['valor_adquisicion'] = str(valor_decimal)
+
+            self.initial['estado'] = activo.estado
+            self.initial['departamento'] = activo.departamento_id
+            self.initial['ubicacion'] = activo.ubicacion
+
+            # Establecer valores iniciales para los campos del hardware
+            self.initial['marca'] = self.instance.marca
+            self.initial['modelo'] = self.instance.modelo
+            self.initial['numero_serie'] = self.instance.numero_serie
+            self.initial['especificaciones'] = self.instance.especificaciones
+            self.initial['fecha_garantia'] = self.instance.fecha_garantia
+            self.initial['periodicidad_mantenimiento'] = self.instance.periodicidad_mantenimiento
+
     def clean(self):
         cleaned_data = super().clean()
-        # Asegurarnos de que todos los campos requeridos estén presentes
-        print("En método clean - datos recibidos:", self.data)
-        print("Campos limpios hasta ahora:", cleaned_data)
         return cleaned_data
 
     def save(self, commit=True, user=None):
-        print("Guardando con datos:", self.cleaned_data)
         activo_id = self.instance.activo_id if hasattr(
             self.instance, 'activo_id') and self.instance.activo_id else None
 
@@ -110,7 +153,16 @@ class SoftwareForm(forms.ModelForm):
     fecha_adquisicion = forms.DateField(widget=forms.DateInput(
         attrs={'type': 'date'}), label='Fecha de adquisición')
     valor_adquisicion = forms.DecimalField(
-        max_digits=10, decimal_places=2, label='Valor de adquisición')
+        max_digits=10,
+        decimal_places=2,
+        label='Valor de adquisición',
+        localize=False,
+        widget=forms.NumberInput(attrs={
+            'class': 'form-control',
+            'step': '0.01',
+            'min': '0'
+        })
+    )
     estado = forms.ChoiceField(choices=Activo.ESTADO_CHOICES, label='Estado')
     departamento = forms.ModelChoiceField(
         queryset=Departamento.objects.all(), label='Departamento')
@@ -130,7 +182,44 @@ class SoftwareForm(forms.ModelForm):
 
     class Meta:
         model = Software
-        fields = []  # No usamos los campos del modelo directamente, ya que trabajamos con dos modelos
+        fields = []
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # Agregar clases CSS a todos los campos
+        for field_name, field in self.fields.items():
+            if not isinstance(field.widget, forms.CheckboxInput):
+                field.widget.attrs['class'] = 'form-control'
+
+        # Si tenemos una instancia (estamos editando), cargar los datos
+        if self.instance and self.instance.pk:
+            activo = self.instance.activo
+
+            # Establecer valores iniciales para los campos del activo
+            self.initial['nombre'] = activo.nombre
+            self.initial['descripcion'] = activo.descripcion
+            self.initial['fecha_adquisicion'] = activo.fecha_adquisicion
+
+            # CLAVE: Convertir explícitamente a formato con punto decimal
+            valor_decimal = activo.valor_adquisicion
+            if isinstance(valor_decimal, Decimal):
+                # Convertir a string con formato americano (punto decimal)
+                valor_formateado = str(valor_decimal).replace(',', '.')
+                self.initial['valor_adquisicion'] = valor_formateado
+            else:
+                self.initial['valor_adquisicion'] = str(valor_decimal)
+
+            self.initial['estado'] = activo.estado
+            self.initial['departamento'] = activo.departamento_id
+            self.initial['ubicacion'] = activo.ubicacion
+
+            # Establecer valores iniciales para los campos del software
+            self.initial['version'] = self.instance.version
+            self.initial['tipo_licencia'] = self.instance.tipo_licencia
+            self.initial['clave_activacion'] = self.instance.clave_activacion
+            self.initial['fecha_vencimiento'] = self.instance.fecha_vencimiento
+            self.initial['numero_licencias'] = self.instance.numero_licencias
 
     def save(self, commit=True, user=None):
         try:
