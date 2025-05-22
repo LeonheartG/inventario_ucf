@@ -107,6 +107,19 @@ a:hover {
     color: var(--white);
 }
 
+/* Botón de éxito personalizado */
+.btn-success {
+    background-color: #28a745;
+    border-color: #28a745;
+    color: var(--white);
+}
+
+.btn-success:hover, .btn-success:focus {
+    background-color: #218838;
+    border-color: #1e7e34;
+    color: var(--white);
+}
+
 /* Cards con mejor contraste */
 .card {
     border: none;
@@ -275,6 +288,7 @@ a:hover {
 .form-control, .form-select {
     color: var(--dark);
     border: 1px solid var(--light-gray);
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
 }
 
 .form-control:focus, .form-select:focus {
@@ -286,10 +300,95 @@ a:hover {
 .form-label {
     color: var(--dark);
     font-weight: 500;
+    margin-bottom: 0.5rem;
 }
 
 .form-check-label {
     color: var(--dark);
+}
+
+/* Estilos específicos para formularios dinámicos */
+.question-form-container {
+    transition: all 0.3s ease;
+}
+
+.question-form-container .card {
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.question-form-container.new-question .card {
+    border-left: 4px solid #28a745;
+    box-shadow: 0 4px 12px rgba(40, 167, 69, 0.15);
+}
+
+.question-form-container .card-header.bg-light {
+    background-color: #f8f9fa !important;
+    border-bottom: 1px solid #dee2e6;
+    color: var(--dark) !important;
+}
+
+.question-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--dark);
+}
+
+.question-title i {
+    color: var(--primary);
+}
+
+.new-question .question-title i {
+    color: #28a745 !important;
+}
+
+/* Botones de acción para formularios */
+.remove-new-question {
+    transition: all 0.2s ease;
+    border: 1px solid #dc3545;
+    color: #dc3545;
+    background-color: transparent;
+}
+
+.remove-new-question:hover {
+    background-color: #dc3545 !important;
+    color: var(--white) !important;
+    border-color: #dc3545 !important;
+    transform: scale(1.05);
+}
+
+#add-question-btn {
+    transition: all 0.3s ease;
+    font-weight: 500;
+}
+
+#add-question-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+}
+
+/* Estados de validación */
+.is-invalid {
+    border-color: #dc3545 !important;
+    box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25) !important;
+}
+
+.is-valid {
+    border-color: #28a745 !important;
+    box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25) !important;
+}
+
+/* Alertas personalizadas */
+.alert {
+    border-radius: 8px;
+    border: none;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.alert-info {
+    background-color: rgba(51, 153, 204, 0.1);
+    color: var(--primary);
+    border-left: 4px solid var(--secondary);
 }
 
 /* Footer */
@@ -308,4 +407,48 @@ footer p {
     .navbar-brand span {
         display: none;
     }
+    
+    .question-form-container .row {
+        margin: 0;
+    }
+    
+    .question-form-container .col-md-4 {
+        margin-bottom: 1rem;
+    }
+    
+    #add-question-btn {
+        width: 100%;
+        margin-top: 0.5rem;
+    }
+}
+
+/* Animaciones suaves para elementos dinámicos */
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.question-form-container.new-question {
+    animation: slideIn 0.4s ease-out;
+}
+
+/* Mejoras para accesibilidad */
+.btn:focus,
+.form-control:focus,
+.form-select:focus {
+    outline: none;
+    box-shadow: 0 0 0 0.2rem rgba(var(--primary-rgb, 0, 102, 153), 0.25);
+}
+
+/* Estilos para elementos de carga */
+.loading {
+    opacity: 0.6;
+    pointer-events: none;
+    cursor: wait;
 }

@@ -9,7 +9,7 @@
             <h6 class="m-0 font-weight-bold text-white">Editar Cuestionario y Preguntas</h6>
         </div>
         <div class="card-body">
-            <form method="post">
+            <form method="post" id="cuestionario-form">
                 {% csrf_token %}
                 
                 <div class="row mb-3">
@@ -31,62 +31,104 @@
                     <textarea class="form-control" id="descripcion" name="descripcion" rows="3" required>{{ form.descripcion.value|default:'' }}</textarea>
                 </div>
                 
-                <h5 class="text-primary mb-3">Preguntas</h5>
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="text-primary mb-0">
+                        &#128196; Preguntas
+                    </h5>
+                    <button type="button" id="add-question" class="btn btn-success btn-sm">
+                        &#10010; Añadir Pregunta
+                    </button>
+                </div>
                 
+                <!-- Formset Management Form -->
                 {{ formset.management_form }}
                 
-                <div id="formset-container">
+                <div id="question-forms">
                     {% for form in formset %}
-                        <div class="card mb-3 formset-form">
-                            <div class="card-body">
-                                <div class="row align-items-center mb-2">
-                                    <div class="col-auto">
-                                        <strong>Pregunta {{ forloop.counter }}</strong>
-                                    </div>
-                                    <div class="col text-end">
-                                        {{ form.DELETE.label_tag }}
-                                        {{ form.DELETE }}
-                                        {{ form.id }}
+                        <div class="question-item mb-3" data-form-index="{{ forloop.counter0 }}">
+                            <div class="card">
+                                <div class="card-header bg-light">
+                                    <div class="row align-items-center">
+                                        <div class="col">
+                                            <h6 class="mb-0 text-dark">
+                                                &#10067; 
+                                                <span class="question-number">Pregunta {{ forloop.counter }}</span>
+                                                {% if form.instance.pk %}
+                                                    <span class="badge bg-info ms-2">Existente</span>
+                                                {% endif %}
+                                            </h6>
+                                        </div>
+                                        <div class="col-auto">
+                                            <div class="form-check">
+                                                {{ form.DELETE }}
+                                                <label class="form-check-label text-danger" for="{{ form.DELETE.id_for_label }}">
+                                                    &#128465; Eliminar
+                                                </label>
+                                            </div>
+                                            {{ form.id }}
+                                        </div>
                                     </div>
                                 </div>
                                 
-                                <div class="row mb-3">
-                                    <div class="col-md-12">
-                                        <label for="{{ form.texto.id_for_label }}" class="form-label">Texto de la pregunta</label>
+                                <div class="card-body">
+                                    <div class="mb-3">
+                                        <label for="{{ form.texto.id_for_label }}" class="form-label text-dark">
+                                            &#9998; Texto de la pregunta
+                                        </label>
                                         {{ form.texto }}
+                                        {% if form.texto.errors %}
+                                            <div class="text-danger small mt-1">{{ form.texto.errors }}</div>
+                                        {% endif %}
                                     </div>
+                                    
+                                    <div class="row">
+                                        <div class="col-md-4">
+                                            <label for="{{ form.tipo.id_for_label }}" class="form-label text-dark">
+                                                &#9881; Tipo
+                                            </label>
+                                            {{ form.tipo }}
+                                            {% if form.tipo.errors %}
+                                                <div class="text-danger small mt-1">{{ form.tipo.errors }}</div>
+                                            {% endif %}
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label for="{{ form.categoria.id_for_label }}" class="form-label text-dark">
+                                                &#127991; Categoría
+                                            </label>
+                                            {{ form.categoria }}
+                                            {% if form.categoria.errors %}
+                                                <div class="text-danger small mt-1">{{ form.categoria.errors }}</div>
+                                            {% endif %}
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label for="{{ form.orden.id_for_label }}" class="form-label text-dark">
+                                                &#8617; Orden
+                                            </label>
+                                            {{ form.orden }}
+                                            {% if form.orden.errors %}
+                                                <div class="text-danger small mt-1">{{ form.orden.errors }}</div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    
+                                    {{ form.cuestionario }}
                                 </div>
-                                
-                                <div class="row mb-3">
-                                    <div class="col-md-4">
-                                        <label for="{{ form.tipo.id_for_label }}" class="form-label">Tipo</label>
-                                        {{ form.tipo }}
-                                    </div>
-                                    <div class="col-md-4">
-                                        <label for="{{ form.categoria.id_for_label }}" class="form-label">Categoría</label>
-                                        {{ form.categoria }}
-                                    </div>
-                                    <div class="col-md-4">
-                                        <label for="{{ form.orden.id_for_label }}" class="form-label">Orden</label>
-                                        {{ form.orden }}
-                                    </div>
-                                </div>
-                                
-                                {{ form.cuestionario }}
                             </div>
+                        </div>
+                    {% empty %}
+                        <div class="alert alert-info text-center" id="no-questions-alert">
+                            &#8505; No hay preguntas en este cuestionario. Haga clic en "Añadir Pregunta" para crear la primera.
                         </div>
                     {% endfor %}
                 </div>
                 
-                <div class="mb-3">
-                    <button type="button" id="add-form" class="btn btn-outline-primary">
-                        <i class="fas fa-plus"></i> Agregar Pregunta
+                <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                    <a href="{% url 'cuestionario_list' %}" class="btn btn-secondary me-md-2">
+                        &#8592; Cancelar
+                    </a>
+                    <button type="submit" class="btn btn-primary">
+                        &#128190; Guardar Cambios
                     </button>
-                </div>
-                
-                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-                    <a href="{% url 'cuestionario_list' %}" class="btn btn-secondary me-md-2">Cancelar</a>
-                    <button type="submit" class="btn btn-primary">Guardar</button>
                 </div>
             </form>
         </div>
@@ -95,43 +137,328 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const container = document.querySelector('#formset-container');
-        const addButton = document.querySelector('#add-form');
-        const totalForms = document.querySelector('#id_form-TOTAL_FORMS');
-        
-        let formCount = parseInt(totalForms.value);
-        
-        addButton.addEventListener('click', function() {
-            const formRegex = RegExp(`form-(\\d+)-`,'g');
-            const lastForm = document.querySelector('.formset-form:last-child');
-            
-            if (lastForm) {
-                const newForm = lastForm.cloneNode(true);
-                formCount++;
-                
-                // Actualizar IDs
-                newForm.innerHTML = newForm.innerHTML.replace(formRegex, function(match, index) {
-                    return `form-${formCount - 1}-`;
-                });
-                
-                // Limpiar valores
-                newForm.querySelectorAll('input[type=text], textarea').forEach(input => {
-                    input.value = '';
-                });
-                
-                // Desmarcar checkbox DELETE
-                newForm.querySelector('input[type=checkbox]').checked = false;
-                
-                container.appendChild(newForm);
-                totalForms.value = formCount;
-                
-                // Actualizar el contador visible
-                newForm.querySelector('strong').innerText = `Pregunta ${formCount}`;
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🚀 Script de cuestionario cargado');
+    
+    // Buscar elementos de manera más robusta
+    const addBtn = document.getElementById('add-question');
+    const container = document.getElementById('question-forms');
+    
+    // Buscar el campo TOTAL_FORMS del management form
+    let totalFormsInput = document.querySelector('input[name$="TOTAL_FORMS"]');
+    if (!totalFormsInput) {
+        totalFormsInput = document.getElementById('id_form-TOTAL_FORMS');
+    }
+    
+    const noQuestionsAlert = document.getElementById('no-questions-alert');
+    
+    console.log('📋 Elementos encontrados:', {
+        addBtn: !!addBtn,
+        container: !!container,
+        totalFormsInput: !!totalFormsInput,
+        totalFormsValue: totalFormsInput ? totalFormsInput.value : 'NO ENCONTRADO'
+    });
+    
+    if (!addBtn || !container || !totalFormsInput) {
+        console.error('❌ No se encontraron todos los elementos necesarios');
+        return;
+    }
+    
+    let formCount = parseInt(totalFormsInput.value) || 0;
+    console.log('📊 Número inicial de formularios:', formCount);
+    
+    // Función para actualizar numeración
+    function updateQuestionNumbers() {
+        const questionItems = container.querySelectorAll('.question-item');
+        questionItems.forEach((item, index) => {
+            const numberSpan = item.querySelector('.question-number');
+            if (numberSpan) {
+                const isNew = item.classList.contains('new-question');
+                if (isNew) {
+                    numberSpan.textContent = `Nueva Pregunta ${index + 1}`;
+                } else {
+                    numberSpan.textContent = `Pregunta ${index + 1}`;
+                }
             }
         });
+        console.log('🔄 Numeración actualizada para', questionItems.length, 'preguntas');
+    }
+    
+    // Función para crear nueva pregunta
+    function createNewQuestion() {
+        console.log('➕ Creando nueva pregunta, índice:', formCount);
+        
+        const newQuestionHTML = `
+            <div class="question-item mb-3 new-question" data-form-index="${formCount}">
+                <div class="card border-success">
+                    <div class="card-header bg-light">
+                        <div class="row align-items-center">
+                            <div class="col">
+                                <h6 class="mb-0 text-dark">
+                                    &#10067; 
+                                    <span class="question-number">Nueva Pregunta</span>
+                                    <span class="badge bg-success ms-2">Nueva</span>
+                                </h6>
+                            </div>
+                            <div class="col-auto">
+                                <button type="button" class="btn btn-sm btn-outline-danger remove-question">
+                                    &#10060; Quitar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label text-dark">
+                                &#9998; Texto de la pregunta
+                            </label>
+                            <textarea class="form-control" name="form-${formCount}-texto" rows="2" required placeholder="Escriba el texto de la pregunta..."></textarea>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-4">
+                                <label class="form-label text-dark">
+                                    &#9881; Tipo
+                                </label>
+                                <select class="form-select" name="form-${formCount}-tipo" required>
+                                    <option value="">Seleccione tipo</option>
+                                    <option value="escala">Escala (1-5)</option>
+                                    <option value="si_no">Sí/No</option>
+                                    <option value="texto">Texto libre</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label text-dark">
+                                    &#127991; Categoría
+                                </label>
+                                <input type="text" class="form-control" name="form-${formCount}-categoria" required placeholder="Ej: Infraestructura">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label text-dark">
+                                    &#8617; Orden
+                                </label>
+                                <input type="number" class="form-control" name="form-${formCount}-orden" value="${formCount + 1}" min="1" required>
+                            </div>
+                        </div>
+                        
+                        <input type="hidden" name="form-${formCount}-cuestionario" value="{{ cuestionario.id }}">
+                        <input type="hidden" name="form-${formCount}-id" value="">
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // Insertar el nuevo HTML
+        container.insertAdjacentHTML('beforeend', newQuestionHTML);
+        
+        // Ocultar mensaje de "no hay preguntas"
+        if (noQuestionsAlert) {
+            noQuestionsAlert.style.display = 'none';
+        }
+        
+        // Actualizar contador
+        formCount++;
+        totalFormsInput.value = formCount;
+        
+        console.log('✅ Nueva pregunta creada. Total formularios:', formCount);
+        
+        // Actualizar numeración
+        updateQuestionNumbers();
+        
+        // Agregar evento al botón de quitar
+        const newQuestion = container.lastElementChild;
+        const removeBtn = newQuestion.querySelector('.remove-question');
+        
+        if (removeBtn) {
+            removeBtn.addEventListener('click', function() {
+                console.log('🗑️ Quitando pregunta');
+                newQuestion.remove();
+                formCount--;
+                totalFormsInput.value = formCount;
+                updateQuestionNumbers();
+                
+                // Mostrar mensaje si no hay preguntas
+                if (container.querySelectorAll('.question-item').length === 0 && noQuestionsAlert) {
+                    noQuestionsAlert.style.display = 'block';
+                }
+            });
+        }
+        
+        // Scroll a la nueva pregunta
+        newQuestion.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        
+        // Enfocar primer campo
+        const firstTextarea = newQuestion.querySelector('textarea');
+        if (firstTextarea) {
+            setTimeout(() => firstTextarea.focus(), 300);
+        }
+    }
+    
+    // Evento del botón añadir
+    addBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        console.log('🔘 Botón añadir presionado');
+        createNewQuestion();
     });
+    
+    // Manejar eliminación de preguntas existentes
+    container.addEventListener('change', function(e) {
+        if (e.target && e.target.type === 'checkbox' && e.target.name.includes('-DELETE')) {
+            const questionItem = e.target.closest('.question-item');
+            const card = questionItem.querySelector('.card');
+            
+            if (e.target.checked) {
+                card.style.opacity = '0.5';
+                card.classList.add('border-danger');
+                const numberSpan = questionItem.querySelector('.question-number');
+                if (numberSpan && !numberSpan.querySelector('.badge.bg-danger')) {
+                    numberSpan.innerHTML += ' <span class="badge bg-danger ms-2">Marcado para eliminar</span>';
+                }
+            } else {
+                card.style.opacity = '1';
+                card.classList.remove('border-danger');
+                const badge = questionItem.querySelector('.badge.bg-danger');
+                if (badge) badge.remove();
+            }
+        }
+    });
+    
+    // Validación del formulario
+    document.getElementById('cuestionario-form').addEventListener('submit', function(e) {
+        const allQuestions = container.querySelectorAll('.question-item');
+        let validQuestions = 0;
+        let hasErrors = false;
+        
+        allQuestions.forEach(question => {
+            const deleteCheckbox = question.querySelector('input[name*="-DELETE"]');
+            const isMarkedForDeletion = deleteCheckbox && deleteCheckbox.checked;
+            
+            if (!isMarkedForDeletion) {
+                validQuestions++;
+                
+                // Validar campos requeridos
+                const requiredFields = question.querySelectorAll('input[required], select[required], textarea[required]');
+                requiredFields.forEach(field => {
+                    if (!field.value.trim()) {
+                        field.classList.add('is-invalid');
+                        hasErrors = true;
+                    } else {
+                        field.classList.remove('is-invalid');
+                    }
+                });
+            }
+        });
+        
+        if (validQuestions === 0) {
+            e.preventDefault();
+            alert('⚠️ El cuestionario debe tener al menos una pregunta.');
+            return false;
+        }
+        
+        if (hasErrors) {
+            e.preventDefault();
+            alert('⚠️ Por favor, complete todos los campos requeridos.');
+            return false;
+        }
+        
+        console.log('📤 Enviando formulario con', validQuestions, 'preguntas válidas');
+    });
+    
+    // Remover errores al escribir
+    container.addEventListener('input', function(e) {
+        if (e.target && e.target.classList.contains('is-invalid')) {
+            e.target.classList.remove('is-invalid');
+        }
+    });
+    
+    // Inicializar numeración
+    updateQuestionNumbers();
+    
+    console.log('🎉 Script de cuestionario inicializado correctamente');
+});
 </script>
+
+<style>
+/* Estilos específicos para este template */
+.question-item {
+    transition: all 0.3s ease;
+}
+
+.question-item.new-question .card {
+    border-left: 4px solid #28a745;
+    animation: slideInFromTop 0.4s ease-out;
+}
+
+.question-number {
+    font-weight: 600;
+    color: #333 !important;
+}
+
+.card-header.bg-light {
+    background-color: #f8f9fa !important;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.card-header h6 {
+    color: #333 !important;
+}
+
+.form-label {
+    color: #333 !important;
+    font-weight: 500;
+}
+
+.text-dark {
+    color: #333 !important;
+}
+
+.is-invalid {
+    border-color: #dc3545 !important;
+    box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25) !important;
+}
+
+.remove-question {
+    transition: all 0.2s ease;
+}
+
+.remove-question:hover {
+    background-color: #dc3545 !important;
+    color: white !important;
+    border-color: #dc3545 !important;
+}
+
+#add-question {
+    transition: all 0.3s ease;
+}
+
+#add-question:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(40, 167, 69, 0.3);
+}
+
+@keyframes slideInFromTop {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .question-item .col-md-4 {
+        margin-bottom: 1rem;
+    }
+    
+    #add-question {
+        width: 100%;
+        margin-top: 0.5rem;
+    }
+}
+</style>
 {% endblock %}

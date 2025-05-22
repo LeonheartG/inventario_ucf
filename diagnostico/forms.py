@@ -25,13 +25,15 @@ class PreguntaForm(forms.ModelForm):
 class PreguntaFormSet(forms.BaseInlineFormSet):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.queryset = Pregunta.objects.filter(
-            cuestionario=kwargs['instance']).order_by('orden')
+        if kwargs.get('instance'):
+            self.queryset = Pregunta.objects.filter(
+                cuestionario=kwargs['instance']).order_by('orden')
 
 
+# Cambiamos extra=3 a extra=0 para que no aparezcan formularios vacíos por defecto
 PreguntaInlineFormSet = forms.inlineformset_factory(
     Cuestionario, Pregunta, form=PreguntaForm, formset=PreguntaFormSet,
-    extra=3, can_delete=True
+    extra=0, can_delete=True
 )
 
 
