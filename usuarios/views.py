@@ -106,21 +106,28 @@ def register_view(request):
                     cargo = form.cleaned_data.get('cargo')
                     telefono = form.cleaned_data.get('telefono')
 
-                    # Obtener o crear rol de usuario regular
-                    rol, created = Rol.objects.get_or_create(
-                        nombre="Usuario Regular",
-                        defaults={
-                            'descripcion': 'Usuario con permisos básicos del sistema'}
-                    )
+                    # El perfil ya fue creado por el signal, ahora lo actualizamos
+                    try:
+                        perfil = user.perfil
+                        perfil.departamento = departamento
+                        perfil.cargo = cargo or ''
+                        perfil.telefono = telefono or ''
+                        perfil.save()
+                    except PerfilUsuario.DoesNotExist:
+                        # Si por alguna razón no se creó el perfil, lo creamos
+                        rol, created = Rol.objects.get_or_create(
+                            nombre="Usuario Regular",
+                            defaults={
+                                'descripcion': 'Usuario con permisos básicos del sistema'}
+                        )
 
-                    # Crear perfil de usuario
-                    PerfilUsuario.objects.create(
-                        usuario=user,
-                        departamento=departamento,
-                        rol=rol,
-                        cargo=cargo or '',
-                        telefono=telefono or ''
-                    )
+                        PerfilUsuario.objects.create(
+                            usuario=user,
+                            departamento=departamento,
+                            rol=rol,
+                            cargo=cargo or '',
+                            telefono=telefono or ''
+                        )
 
                     # Registrar actividad
                     LogActividad.objects.create(
@@ -137,8 +144,26 @@ def register_view(request):
                     return redirect('login')
 
             except Exception as e:
-                messages.error(
-                    request, 'Error al crear la cuenta. Intente nuevamente.')
+                # Mostrar el error específico para debug (solo en desarrollo)
+                import traceback
+                print(f"Error en registro: {str(e)}")
+                print(traceback.format_exc())
+
+                # Mostrar mensaje de error más específico
+                if 'UNIQUE constraint' in str(e):
+                    messages.error(
+                        request, 'Ya existe un usuario con ese nombre o correo electrónico.')
+                elif 'NOT NULL constraint' in str(e):
+                    messages.error(
+                        request, 'Faltan datos requeridos en el formulario.')
+                else:
+                    messages.error(
+                        request, f'Error al crear la cuenta: {str(e)}')
+        else:
+            # Mostrar errores específicos del formulario
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f'Error en {field}: {error}')
     else:
         form = RegistroForm()
 

@@ -166,19 +166,21 @@ def hardware_delete(request, pk):
     if request.method == 'POST':
         activo_nombre = hardware.activo.nombre
         activo_id = hardware.activo_id
+        activo = hardware.activo  # Obtener referencia al activo
 
-        # Eliminar el hardware y su activo asociado
-        hardware.delete()  # Esto eliminará el hardware y el activo asociado en cascada
+        # Eliminar PRIMERO el hardware, LUEGO el activo
+        hardware.delete()  # Elimina el hardware
+        activo.delete()    # Elimina el activo explícitamente
 
         # Registrar actividad
         LogActividad.objects.create(
             usuario=request.user,
             accion=f"Eliminación de hardware: {activo_nombre}",
-            detalles=f"ID de activo: {activo_id}"
+            detalles=f"ID de activo: {activo_id} - Eliminado completamente"
         )
 
         messages.success(
-            request, f'Hardware "{activo_nombre}" eliminado correctamente.')
+            request, f'Hardware "{activo_nombre}" eliminado completamente.')
         return redirect('hardware_list')
 
     return render(request, 'inventario/hardware_confirm_delete.html', {'hardware': hardware})
@@ -335,19 +337,21 @@ def software_delete(request, pk):
     if request.method == 'POST':
         activo_nombre = software.activo.nombre
         activo_id = software.activo_id
+        activo = software.activo  # Obtener referencia al activo
 
-        # Eliminar el software y su activo asociado
-        software.delete()  # Esto eliminará el software y el activo asociado en cascada
+        # Eliminar PRIMERO el software, LUEGO el activo
+        software.delete()  # Elimina el software
+        activo.delete()    # Elimina el activo explícitamente
 
         # Registrar actividad
         LogActividad.objects.create(
             usuario=request.user,
             accion=f"Eliminación de software: {activo_nombre}",
-            detalles=f"ID de activo: {activo_id}"
+            detalles=f"ID de activo: {activo_id} - Eliminado completamente"
         )
 
         messages.success(
-            request, f'Software "{activo_nombre}" eliminado correctamente.')
+            request, f'Software "{activo_nombre}" eliminado completamente.')
         return redirect('software_list')
 
     return render(request, 'inventario/software_confirm_delete.html', {'software': software})

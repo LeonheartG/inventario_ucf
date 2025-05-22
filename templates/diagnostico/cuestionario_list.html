@@ -1,51 +1,148 @@
 {% extends 'base/base.html' %}
 
-{% block title %}Cuestionarios - UCF{% endblock %}
+{% block title %}Lista de Cuestionarios - UCF{% endblock %}
 
 {% block content %}
 <div class="container">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1>Cuestionarios</h1>
-        <a href="{% url 'cuestionario_new' %}" class="btn btn-primary">
-            <i class="fas fa-plus"></i> Nuevo Cuestionario
-        </a>
+    <div class="row mb-4">
+        <div class="col-lg-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="display-6 mb-0">Cuestionarios de Diagnóstico</h1>
+                    <p class="lead">Gestione los cuestionarios de evaluación de transformación digital</p>
+                </div>
+                <a href="{% url 'cuestionario_new' %}" class="btn btn-primary fade-in">
+                    <i class="fas fa-plus me-2"></i>Nuevo Cuestionario
+                </a>
+            </div>
+            <hr class="my-4">
+        </div>
     </div>
-    
-    <div class="card shadow mb-4">
-        <div class="card-header py-3 d-flex justify-content-between align-items-center">
-            <h6 class="m-0 font-weight-bold text-white">Listado de Cuestionarios</h6>
-            <div class="input-group w-50">
-                <input type="text" class="form-control" placeholder="Buscar...">
-                <button class="btn btn-outline-secondary" type="button">
-                    <i class="fas fa-search"></i>
-                </button>
+
+    <!-- Filtros -->
+    <div class="row mb-4">
+        <div class="col-lg-12">
+            <div class="card fade-in">
+                <div class="card-header">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-filter me-2"></i>Filtros de Búsqueda
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <form method="get" class="row g-3">
+                        <div class="col-md-4">
+                            <label for="search" class="form-label">Buscar</label>
+                            <input type="text" class="form-control" id="search" name="search" 
+                                   value="{{ search }}" placeholder="Título o descripción">
+                        </div>
+                        <div class="col-md-3">
+                            <label for="activo" class="form-label">Estado</label>
+                            <select class="form-control" id="activo" name="activo">
+                                <option value="">Todos</option>
+                                <option value="true" {% if activo == 'true' %}selected{% endif %}>Activos</option>
+                                <option value="false" {% if activo == 'false' %}selected{% endif %}>Inactivos</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3 d-flex align-items-end">
+                            <button type="submit" class="btn btn-primary me-2">
+                                <i class="fas fa-search me-1"></i>Buscar
+                            </button>
+                            <a href="{% url 'cuestionario_list' %}" class="btn btn-secondary">
+                                <i class="fas fa-times me-1"></i>Limpiar
+                            </a>
+                        </div>
+                    </form>
+                </div>
             </div>
         </div>
-        <div class="card-body">
-            <div class="table-responsive">
-                <table class="table table-bordered table-hover" id="dataTable" width="100%" cellspacing="0">
-                    <thead class="table-light">
-                        <tr>
-                            <th>Título</th>
-                            <th>Creado por</th>
-                            <th>Fecha Creación</th>
-                            <th>Estado</th>
-                            <th>Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td colspan="5" class="text-center">No hay registros disponibles</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
+    </div>
+
+    <!-- Lista de cuestionarios -->
+    <div class="row">
+        <div class="col-lg-12">
+            {% if cuestionarios %}
+                {% for cuestionario in cuestionarios %}
+                <div class="card mb-4 fade-in">
+                    <div class="card-header">
+                        <div class="row align-items-center">
+                            <div class="col">
+                                <h6 class="m-0 font-weight-bold text-primary">
+                                    <i class="fas fa-clipboard-list me-2"></i>{{ cuestionario.titulo }}
+                                </h6>
+                            </div>
+                            <div class="col-auto">
+                                {% if cuestionario.activo %}
+                                    <span class="badge bg-success">Activo</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">Inactivo</span>
+                                {% endif %}
+                                <span class="badge bg-info">{{ cuestionario.preguntas.count }} pregunta{{ cuestionario.preguntas.count|pluralize:"s" }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-8">
+                                {% if cuestionario.descripcion %}
+                                    <p class="card-text mb-3">{{ cuestionario.descripcion|truncatechars:200 }}</p>
+                                {% else %}
+                                    <p class="card-text text-muted mb-3">Sin descripción disponible</p>
+                                {% endif %}
+                                
+                                <div class="row text-muted small">
+                                    <div class="col-sm-6">
+                                        <i class="fas fa-user me-1"></i>
+                                        <strong>Creado por:</strong> {{ cuestionario.creado_por.get_full_name|default:cuestionario.creado_por.username }}
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <i class="fas fa-calendar me-1"></i>
+                                        <strong>Fecha:</strong> {{ cuestionario.fecha_creacion|date:"d/m/Y H:i" }}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4 text-end">
+                                <div class="btn-group" role="group">
+                                    <a href="{% url 'cuestionario_detail' cuestionario.pk %}" 
+                                       class="btn btn-primary btn-sm" title="Ver detalles">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="{% url 'cuestionario_edit' cuestionario.pk %}" 
+                                       class="btn btn-secondary btn-sm" title="Editar">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <a href="{% url 'cuestionario_delete' cuestionario.pk %}" 
+                                       class="btn btn-danger btn-sm" 
+                                       onclick="return confirm('¿Está seguro de eliminar este cuestionario?')"
+                                       title="Eliminar">
+                                        <i class="fas fa-trash"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="card fade-in">
+                    <div class="card-body text-center py-5">
+                        <div class="dashboard-icon mb-4">
+                            <i class="fas fa-clipboard-list"></i>
+                        </div>
+                        <h4 class="mb-3">No hay cuestionarios disponibles</h4>
+                        <p class="text-muted mb-4">
+                            {% if search or activo %}
+                                No se encontraron cuestionarios que coincidan con los criterios de búsqueda.
+                            {% else %}
+                                Aún no se han creado cuestionarios de diagnóstico.
+                            {% endif %}
+                        </p>
+                        <a href="{% url 'cuestionario_new' %}" class="btn btn-primary">
+                            <i class="fas fa-plus me-2"></i>Crear primer cuestionario
+                        </a>
+                    </div>
+                </div>
+            {% endif %}
         </div>
     </div>
 </div>
-{% endblock %}
-
-{% block extra_js %}
-<!-- Font Awesome -->
-<script src="https://kit.fontawesome.com/a076d05399.js"></script>
 {% endblock %}

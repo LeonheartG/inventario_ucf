@@ -20,8 +20,10 @@ from diagnostico.models import Diagnostico, IndicadorDiagnostico as Indicador
 # Librerías para exportación
 try:
     import xlsxwriter
+    XLSXWRITER_AVAILABLE = True
 except ImportError:
     xlsxwriter = None
+    XLSXWRITER_AVAILABLE = False
 
 try:
     from reportlab.platypus import SimpleDocTemplate, Paragraph, Table, TableStyle, Image, Spacer
@@ -29,8 +31,10 @@ try:
     from reportlab.lib import colors
     from reportlab.lib.pagesizes import letter, landscape
     from reportlab.lib.units import inch
+    from reportlab.lib.utils import ImageReader
+    REPORTLAB_AVAILABLE = True
 except ImportError:
-    reportlab = None
+    REPORTLAB_AVAILABLE = False
 
 
 @login_required
@@ -511,33 +515,40 @@ def mantenimiento_report_result(request):
 @login_required
 def transformacion_digital_report(request):
     """Página para generar reporte de transformación digital"""
-    from .forms import TransformacionDigitalReportForm
+    try:
+        from .forms import TransformacionDigitalReportForm
 
-    if request.method == 'GET' and any(param for param in request.GET if param not in ['page']):
-        # Si hay parámetros en la URL, procesar el formulario
-        form = TransformacionDigitalReportForm(request.GET)
-        if form.is_valid():
-            # Exportar directamente en el formato seleccionado
-            formato = form.cleaned_data.get('formato', 'pdf')
-            return export_diagnostico(request, format=formato)
-    else:
-        # Si no hay parámetros, mostrar formulario vacío
-        form = TransformacionDigitalReportForm()
+        if request.method == 'GET' and any(param for param in request.GET if param not in ['page']):
+            # Si hay parámetros en la URL, procesar el formulario
+            form = TransformacionDigitalReportForm(request.GET)
+            if form.is_valid():
+                # Exportar directamente en el formato seleccionado
+                formato = form.cleaned_data.get('formato', 'pdf')
+                return export_diagnostico(request, format=formato)
+        else:
+            # Si no hay parámetros, mostrar formulario vacío
+            form = TransformacionDigitalReportForm()
 
-    context = {
-        'form': form
-    }
+        context = {
+            'form': form
+        }
 
-    return render(request, 'reportes/transformacion_digital_report.html', context)
+        return render(request, 'reportes/transformacion_digital_report.html', context)
+
+    except ImportError:
+        # Si no existe el módulo de diagnóstico
+        return render(request, 'reportes/transformacion_digital_report.html', {
+            'error': 'El módulo de diagnóstico no está disponible.'
+        })
 
 
 @login_required
 def transformacion_digital_report_result(request):
     """Resultados del reporte de transformación digital"""
     try:
-        # Importar modelos de diagnóstico
+        # Importar modelos de diagnóstico - CORREGIR nombre del modelo
         from .forms import TransformacionDigitalReportForm
-        from diagnostico.models import Diagnostico, Indicador
+        from diagnostico.models import Diagnostico, IndicadorDiagnostico
 
         # Obtener parámetros del formulario
         form = TransformacionDigitalReportForm(request.GET)
@@ -572,7 +583,7 @@ def transformacion_digital_report_result(request):
         # Obtener indicadores por departamento
         indicadores_por_departamento = []
         for diag in diagnosticos:
-            indicadores = Indicador.objects.filter(diagnostico=diag)
+            indicadores = IndicadorDiagnostico.objects.filter(diagnostico=diag)
             if indicadores.exists():
                 nivel_dept = indicadores.aggregate(
                     nivel=Avg('valor'))['nivel'] or 0
@@ -941,11 +952,15 @@ def export_mantenimiento(request, format):
         return export_mantenimiento(request, 'pdf')
 
 
+login_required
+
+
 @login_required
 def export_diagnostico(request, format):
     """Exportar reporte de diagnóstico a PDF o Excel"""
     try:
-        from diagnostico.models import Diagnostico, Indicador
+        from diagnostico.models import Diagnostico, IndicadorDiagnostico
+        from django.db.models import Avg
 
         # Obtener los mismos filtros que se usaron en el reporte
         departamento = request.GET.get('departamento', '')
@@ -965,7 +980,7 @@ def export_diagnostico(request, format):
         if fecha_fin:
             diagnosticos = diagnosticos.filter(fecha__lte=fecha_fin)
 
-        if format == 'excel' and xlsxwriter:
+        if format == 'excel' and XLSXWRITER_AVAILABLE:
             # Crear respuesta Excel
             output = BytesIO()
             workbook = xlsxwriter.Workbook(output)
@@ -1006,7 +1021,8 @@ def export_diagnostico(request, format):
                 # Obtener indicadores
                 row_num = 1
                 for diag in diagnosticos:
-                    indicadores = Indicador.objects.filter(diagnostico=diag)
+                    indicadores = IndicadorDiagnostico.objects.filter(
+                        diagnostico=diag)
                     for ind in indicadores:
                         worksheet_ind.write(
                             row_num, 0, diag.departamento.nombre)
@@ -1028,6 +1044,12 @@ def export_diagnostico(request, format):
             return response
 
         elif format == 'pdf':
+            if not REPORTLAB_AVAILABLE:
+                # Si reportlab no está disponible, ofrecer alternativa
+                messages.error(
+                    request, 'La generación de PDF no está disponible. Instale reportlab o use formato Excel.')
+                return redirect('transformacion_digital_report')
+
             # Crear respuesta PDF
             response = HttpResponse(content_type='application/pdf')
             response['Content-Disposition'] = 'attachment; filename="diagnostico.pdf"'
@@ -1050,6 +1072,7 @@ def export_diagnostico(request, format):
             # Filtros aplicados
             filtros = []
             if departamento:
+                from usuarios.models import Departamento
                 dept_name = Departamento.objects.filter(
                     id=departamento).first()
                 if dept_name:
@@ -1109,52 +1132,35 @@ def export_diagnostico(request, format):
             if nivel_general < 2:
                 elements.append(Paragraph(
                     "La institución se encuentra en un nivel básico de transformación digital. Es necesario implementar acciones inmediatas para mejorar.", normal_style))
-                elements.append(Paragraph(
-                    "• Desarrollar un plan estratégico de transformación digital", normal_style))
-                elements.append(
-                    Paragraph("• Actualizar la infraestructura tecnológica básica", normal_style))
-                elements.append(Paragraph(
-                    "• Capacitar al personal en competencias digitales básicas", normal_style))
             elif nivel_general < 3:
                 elements.append(Paragraph(
                     "La institución se encuentra en un nivel medio-bajo de transformación digital. Se requiere mayor avance.", normal_style))
-                elements.append(Paragraph(
-                    "• Fortalecer la infraestructura tecnológica existente", normal_style))
-                elements.append(
-                    Paragraph("• Digitalizar procesos administrativos clave", normal_style))
-                elements.append(Paragraph(
-                    "• Desarrollar políticas de gestión de datos institucionales", normal_style))
             elif nivel_general < 4:
                 elements.append(Paragraph(
                     "La institución se encuentra en un nivel medio-alto de transformación digital. Se pueden optimizar algunos procesos.", normal_style))
-                elements.append(
-                    Paragraph("• Integrar los sistemas digitales existentes", normal_style))
-                elements.append(
-                    Paragraph("• Implementar soluciones de analítica avanzada", normal_style))
-                elements.append(
-                    Paragraph("• Optimizar la experiencia digital del estudiante", normal_style))
             else:
                 elements.append(Paragraph(
                     "La institución se encuentra en un nivel alto de transformación digital. Se recomienda mantenimiento y mejora continua.", normal_style))
-                elements.append(Paragraph(
-                    "• Mantener actualizadas las tecnologías implementadas", normal_style))
-                elements.append(Paragraph(
-                    "• Compartir buenas prácticas con otras instituciones", normal_style))
-                elements.append(
-                    Paragraph("• Reforzar las políticas de ciberseguridad", normal_style))
 
             # Construir PDF
             doc.build(elements)
             pdf = buffer.getvalue()
             buffer.close()
-
             response.write(pdf)
             return response
 
         else:
-            # Por defecto, exportar como PDF
-            return export_diagnostico(request, 'pdf')
+            # Por defecto, intentar PDF si está disponible, sino Excel
+            if REPORTLAB_AVAILABLE:
+                return export_diagnostico(request, 'pdf')
+            elif XLSXWRITER_AVAILABLE:
+                return export_diagnostico(request, 'excel')
+            else:
+                messages.error(
+                    request, 'No hay bibliotecas de exportación disponibles. Instale reportlab o xlsxwriter.')
+                return redirect('transformacion_digital_report')
 
     except ImportError:
         # Si no existe el módulo de diagnóstico
+        messages.error(request, 'El módulo de diagnóstico no está disponible.')
         return redirect('transformacion_digital_report')

@@ -33,30 +33,6 @@
                 </ul>
             </div>
             {% endif %}
-            <div class="alert alert-info">
-    <h5>DEBUG INFO:</h5>
-    <p><strong>Form initial data:</strong> {{ form.initial }}</p>
-    <p><strong>Valor adquisición inicial:</strong> {{ form.initial.valor_adquisicion }}</p>
-    <p><strong>Field value:</strong> {{ form.valor_adquisicion.value }}</p>
-    {% if hardware %}
-        <p><strong>Hardware activo valor:</strong> {{ hardware.activo.valor_adquisicion }}</p>
-    {% endif %}
-</div>
-
-<!-- Y verifica cómo está renderizando el campo: -->
-<div class="mb-3">
-    <label for="{{ form.valor_adquisicion.id_for_label }}" class="form-label">
-        Valor de Adquisición *
-    </label>
-    {{ form.valor_adquisicion }}
-    {% if form.valor_adquisicion.errors %}
-        <div class="text-danger">
-            {% for error in form.valor_adquisicion.errors %}
-                {{ error }}
-            {% endfor %}
-        </div>
-    {% endif %}
-</div>
             <form method="post" enctype="multipart/form-data">
                 {% csrf_token %}
                 
