@@ -43,19 +43,32 @@
     .text-gray-800 {
         color: #5a5c69 !important;
     }
+    .role-badge {
+        position: absolute;
+        top: 10px;
+        right: 15px;
+        font-size: 0.75rem;
+    }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="container">
     <div class="row mb-4">
-        <div class="col-12">
+        <div class="col-12 position-relative">
             <h1 class="display-4">Panel Principal</h1>
             <p class="lead">Bienvenido al Sistema Integral para la Gestión de Inventarios Tecnológicos de la Universidad de Cienfuegos.</p>
+            
+            <!-- Badge del rol del usuario -->
+            <span class="badge bg-primary role-badge">
+                <i class="fas fa-user-tag me-1"></i>{{ rol_usuario }}
+            </span>
+            
             <hr class="my-4">
         </div>
     </div>
 
+    <!-- Tarjetas de métricas principales -->
     <div class="row">
         <div class="col-xl-3 col-md-6 mb-4">
             <div class="card border-left-primary shadow h-100 py-2">
@@ -130,6 +143,7 @@
         </div>
     </div>
 
+    <!-- Gráficos de distribución -->
     <div class="row">
         <div class="col-lg-6 mb-4">
             <div class="card shadow mb-4">
@@ -166,41 +180,96 @@
         </div>
     </div>
 
+    <!-- Información adicional para roles con permisos -->
+    {% if puede_reportes %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="alert alert-info">
+                <h5 class="alert-heading">
+                    <i class="fas fa-chart-bar me-2"></i>Acceso a Reportes Avanzados
+                </h5>
+                <p class="mb-0">Su rol le permite acceder a la sección de reportes y análisis avanzados.</p>
+                <hr>
+                <a href="/reportes/" class="btn btn-primary btn-sm">
+                    <i class="fas fa-arrow-right me-1"></i>Ir a Reportes
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Actividad reciente (solo para roles autorizados) -->
+    {% if mostrar_actividad %}
     <div class="row">
         <div class="col-lg-12 mb-4">
             <div class="card shadow mb-4">
-                <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold text-primary">Actividad Reciente</h6>
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-history me-2"></i>Actividad Reciente del Sistema
+                    </h6>
+                    <small class="badge bg-secondary">Solo visible para administradores</small>
                 </div>
                 <div class="card-body">
                     {% if actividades %}
                         <div class="table-responsive">
-                            <table class="table table-bordered" width="100%" cellspacing="0">
-                                <thead>
+                            <table class="table table-bordered table-hover" width="100%" cellspacing="0">
+                                <thead class="table-light">
                                     <tr>
-                                        <th>Usuario</th>
-                                        <th>Acción</th>
-                                        <th>Fecha</th>
+                                        <th><i class="fas fa-user me-1"></i>Usuario</th>
+                                        <th><i class="fas fa-tasks me-1"></i>Acción</th>
+                                        <th><i class="fas fa-clock me-1"></i>Fecha</th>
+                                        <th><i class="fas fa-network-wired me-1"></i>IP</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {% for actividad in actividades %}
                                     <tr>
-                                        <td>{{ actividad.usuario.username }}</td>
+                                        <td>
+                                            <strong>{{ actividad.usuario.username }}</strong>
+                                            {% if actividad.usuario.get_full_name %}
+                                                <br><small class="text-muted">{{ actividad.usuario.get_full_name }}</small>
+                                            {% endif %}
+                                        </td>
                                         <td>{{ actividad.accion }}</td>
                                         <td>{{ actividad.fecha|date:"d/m/Y H:i" }}</td>
+                                        <td><code>{{ actividad.ip|default:"No registrada" }}</code></td>
                                     </tr>
                                     {% endfor %}
                                 </tbody>
                             </table>
                         </div>
+                        
+                        <div class="text-center mt-3">
+                            <small class="text-muted">
+                                <i class="fas fa-info-circle me-1"></i>
+                                Mostrando las últimas 10 actividades del sistema
+                            </small>
+                        </div>
                     {% else %}
-                        <p>No hay actividades recientes registradas.</p>
+                        <div class="text-center py-4">
+                            <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                            <p class="text-muted">No hay actividades recientes registradas.</p>
+                        </div>
                     {% endif %}
                 </div>
             </div>
         </div>
     </div>
+    {% else %}
+    <!-- Mensaje para usuarios regulares -->
+    <div class="row">
+        <div class="col-12">
+            <div class="alert alert-light border">
+                <h6 class="alert-heading">
+                    <i class="fas fa-user me-2"></i>Panel de Usuario Regular
+                </h6>
+                <p class="mb-0 text-muted">
+                    Tiene acceso a las funciones básicas del sistema. Para funciones avanzadas contacte al administrador.
+                </p>
+            </div>
+        </div>
+    </div>
+    {% endif %}
 </div>
 {% endblock %}
 

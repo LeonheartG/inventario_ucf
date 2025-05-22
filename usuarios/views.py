@@ -8,6 +8,7 @@ from django.utils import timezone
 from django.db import transaction
 from .models import PerfilUsuario, Departamento, Rol, LogActividad
 from .forms import RegistroForm, PerfilForm, LoginForm, CambiarPasswordForm
+from .decorators import puede_ver_actividad, puede_ver_reportes
 
 
 def index(request):
@@ -103,14 +104,12 @@ def register_view(request):
 
                     # Obtener datos adicionales del formulario
                     departamento = form.cleaned_data.get('departamento')
-                    cargo = form.cleaned_data.get('cargo')
                     telefono = form.cleaned_data.get('telefono')
 
                     # El perfil ya fue creado por el signal, ahora lo actualizamos
                     try:
                         perfil = user.perfil
                         perfil.departamento = departamento
-                        perfil.cargo = cargo or ''
                         perfil.telefono = telefono or ''
                         perfil.save()
                     except PerfilUsuario.DoesNotExist:
@@ -125,7 +124,6 @@ def register_view(request):
                             usuario=user,
                             departamento=departamento,
                             rol=rol,
-                            cargo=cargo or '',
                             telefono=telefono or ''
                         )
 
@@ -265,7 +263,7 @@ def cambiar_password_view(request):
 
 @login_required
 def dashboard_view(request):
-    """Vista del dashboard principal"""
+    """Vista del dashboard principal con restricciones por rol"""
     try:
         # Importación de modelos necesarios
         from inventario.models import Activo, Hardware, Software, Mantenimiento
@@ -331,9 +329,27 @@ def dashboard_view(request):
             software_vencer = 0
             por_departamento = []
 
-        # Obtener logs de actividad reciente
-        actividades = LogActividad.objects.select_related(
-            'usuario').order_by('-fecha')[:10]
+        # Verificar permisos para actividad reciente
+        actividades = []
+        mostrar_actividad = puede_ver_actividad(request.user)
+
+        if mostrar_actividad:
+            try:
+                actividades = LogActividad.objects.select_related(
+                    'usuario').order_by('-fecha')[:10]
+            except Exception:
+                actividades = []
+
+        # Verificar permisos para reportes
+        puede_reportes = puede_ver_reportes(request.user)
+
+        # Obtener información del rol para mostrar en el template
+        rol_usuario = "Usuario Regular"
+        try:
+            if hasattr(request.user, 'perfil') and request.user.perfil.rol:
+                rol_usuario = request.user.perfil.rol.nombre
+        except Exception:
+            pass
 
         context = {
             'total_activos': total_activos,
@@ -344,6 +360,9 @@ def dashboard_view(request):
             'software_vencer': software_vencer,
             'por_departamento': por_departamento,
             'actividades': actividades,
+            'mostrar_actividad': mostrar_actividad,
+            'puede_reportes': puede_reportes,
+            'rol_usuario': rol_usuario,
         }
 
         return render(request, 'usuarios/dashboard.html', context)
@@ -361,6 +380,9 @@ def dashboard_view(request):
             'software_vencer': 0,
             'por_departamento': [],
             'actividades': [],
+            'mostrar_actividad': False,
+            'puede_reportes': False,
+            'rol_usuario': 'Usuario Regular',
         }
         return render(request, 'usuarios/dashboard.html', context)
 
