@@ -1,4 +1,5 @@
 import os
+import sys
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -191,3 +192,21 @@ if not os.path.exists(REPORTES_DIR):
 # Crear directorio de logs si no existe
 if not os.path.exists(LOGS_DIR):
     os.makedirs(LOGS_DIR, mode=0o755)
+
+if 'test' in sys.argv:
+    DATABASES['default'] = {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': ':memory:'
+    }
+
+    # Desactivar migraciones para pruebas más rápidas
+    MIGRATION_MODULES = {
+        'usuarios': None,
+        'inventario': None,
+        'locales': None,
+        'diagnostico': None,
+        'reportes': None,
+    }
+
+    # Configuración para archivos de media en pruebas
+    MEDIA_ROOT = tempfile.mkdtemp()
