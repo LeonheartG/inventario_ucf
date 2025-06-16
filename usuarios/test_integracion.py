@@ -25,6 +25,26 @@ class AutenticacionIntegracionTestCase(TestCase):
     Valida la interacción entre vistas, modelos, formularios y templates
     """
 
+    def get_or_create_perfil(self, user, departamento, rol=None, **kwargs):
+        """Método auxiliar para obtener o crear perfil sin duplicados"""
+        try:
+            perfil = PerfilUsuario.objects.get(usuario=user)
+            # Actualizar campos si es necesario
+            perfil.departamento = departamento
+            if rol:
+                perfil.rol = rol
+            for key, value in kwargs.items():
+                setattr(perfil, key, value)
+            perfil.save()
+            return perfil
+        except PerfilUsuario.DoesNotExist:
+            return PerfilUsuario.objects.create(
+                usuario=user,
+                departamento=departamento,
+                rol=rol,
+                **kwargs
+            )
+
     def setUp(self):
         """Configuración inicial para las pruebas de integración"""
         self.client = Client()
@@ -105,9 +125,9 @@ class AutenticacionIntegracionTestCase(TestCase):
         CP-INT-02: Verificar flujo completo de login y logout
         Integración: Autenticación -> Actualización de perfil -> Logging -> Sesión
         """
-        # Crear perfil para el usuario
-        PerfilUsuario.objects.create(
-            usuario=self.user,
+        # Crear o actualizar perfil para el usuario (SIN crear manualmente)
+        self.get_or_create_perfil(
+            user=self.user,
             departamento=self.departamento,
             rol=self.rol
         )
@@ -174,8 +194,9 @@ class AutenticacionIntegracionTestCase(TestCase):
             permisos="INVENTARIO_READ"
         )
 
-        perfil = PerfilUsuario.objects.create(
-            usuario=self.user,
+        # Usar método auxiliar en lugar de create directo
+        perfil = self.get_or_create_perfil(
+            user=self.user,
             departamento=self.departamento,
             rol=rol_limitado
         )
@@ -208,8 +229,9 @@ class AutenticacionIntegracionTestCase(TestCase):
             permisos="ALL"
         )
 
-        PerfilUsuario.objects.create(
-            usuario=self.user,
+        # Usar método auxiliar
+        self.get_or_create_perfil(
+            user=self.user,
             departamento=self.departamento,
             rol=rol_admin
         )
@@ -258,6 +280,25 @@ class PerfilUsuarioIntegracionTestCase(TestCase):
     Pruebas de integración para la gestión de perfiles de usuario
     """
 
+    def get_or_create_perfil(self, user, departamento, rol=None, **kwargs):
+        """Método auxiliar para obtener o crear perfil sin duplicados"""
+        try:
+            perfil = PerfilUsuario.objects.get(usuario=user)
+            perfil.departamento = departamento
+            if rol:
+                perfil.rol = rol
+            for key, value in kwargs.items():
+                setattr(perfil, key, value)
+            perfil.save()
+            return perfil
+        except PerfilUsuario.DoesNotExist:
+            return PerfilUsuario.objects.create(
+                usuario=user,
+                departamento=departamento,
+                rol=rol,
+                **kwargs
+            )
+
     def setUp(self):
         self.client = Client()
         self.departamento = Departamento.objects.create(
@@ -271,8 +312,9 @@ class PerfilUsuarioIntegracionTestCase(TestCase):
             email='perfil@ucf.edu.cu'
         )
 
-        self.perfil = PerfilUsuario.objects.create(
-            usuario=self.user,
+        # Usar get_or_create en lugar de create directo
+        self.perfil = self.get_or_create_perfil(
+            user=self.user,
             departamento=self.departamento,
             telefono='555-9876'
         )
@@ -364,6 +406,25 @@ class TransaccionesIntegracionTestCase(TestCase):
     Verificar integridad de datos en operaciones complejas
     """
 
+    def get_or_create_perfil(self, user, departamento, rol=None, **kwargs):
+        """Método auxiliar para obtener o crear perfil sin duplicados"""
+        try:
+            perfil = PerfilUsuario.objects.get(usuario=user)
+            perfil.departamento = departamento
+            if rol:
+                perfil.rol = rol
+            for key, value in kwargs.items():
+                setattr(perfil, key, value)
+            perfil.save()
+            return perfil
+        except PerfilUsuario.DoesNotExist:
+            return PerfilUsuario.objects.create(
+                usuario=user,
+                departamento=departamento,
+                rol=rol,
+                **kwargs
+            )
+
     def setUp(self):
         self.client = Client()
         self.departamento = Departamento.objects.create(
@@ -416,8 +477,8 @@ class TransaccionesIntegracionTestCase(TestCase):
             username='loguser',
             password='testpass123'
         )
-        PerfilUsuario.objects.create(
-            usuario=user,
+        self.get_or_create_perfil(
+            user=user,
             departamento=self.departamento
         )
 
@@ -442,6 +503,25 @@ class RendimientoIntegracionTestCase(TestCase):
     Según RNF6: Soporte para 100 usuarios concurrentes
     """
 
+    def get_or_create_perfil(self, user, departamento, rol=None, **kwargs):
+        """Método auxiliar para obtener o crear perfil sin duplicados"""
+        try:
+            perfil = PerfilUsuario.objects.get(usuario=user)
+            perfil.departamento = departamento
+            if rol:
+                perfil.rol = rol
+            for key, value in kwargs.items():
+                setattr(perfil, key, value)
+            perfil.save()
+            return perfil
+        except PerfilUsuario.DoesNotExist:
+            return PerfilUsuario.objects.create(
+                usuario=user,
+                departamento=departamento,
+                rol=rol,
+                **kwargs
+            )
+
     def setUp(self):
         self.client = Client()
         self.departamento = Departamento.objects.create(
@@ -457,8 +537,9 @@ class RendimientoIntegracionTestCase(TestCase):
                 password='testpass123',
                 email=f'user{i}@ucf.edu.cu'
             )
-            PerfilUsuario.objects.create(
-                usuario=user,
+            # Usar método auxiliar
+            self.get_or_create_perfil(
+                user=user,
                 departamento=self.departamento
             )
             self.users.append(user)

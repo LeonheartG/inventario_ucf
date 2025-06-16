@@ -304,6 +304,7 @@ class HardwareFormTestCase(TestCase):
         CP-UT-10: Verificar validación exitosa del formulario de hardware
         """
         form_data = {
+            # Campos del activo base
             'nombre': 'Laptop Dell',
             'descripcion': 'Laptop para desarrollo',
             'fecha_adquisicion': '2024-01-15',
@@ -311,6 +312,8 @@ class HardwareFormTestCase(TestCase):
             'estado': 'activo',
             'departamento': self.departamento.id,
             'ubicacion': 'Oficina 102',
+
+            # Campos específicos del hardware (CORREGIDOS)
             'marca': 'Dell',
             'modelo': 'Latitude 5520',
             'numero_serie': 'DL2024001',

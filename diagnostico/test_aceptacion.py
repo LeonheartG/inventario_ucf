@@ -13,14 +13,21 @@ from django.test import TestCase, Client
 from django.contrib.auth.models import User
 from django.urls import reverse
 from django.core.exceptions import ValidationError
-from selenium import webdriver
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait, Select
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.chrome.options import Options
 from unittest.mock import patch
 import time
 import json
+import unittest
+
+# Importación condicional de Selenium
+try:
+    from selenium import webdriver
+    from selenium.webdriver.common.by import By
+    from selenium.webdriver.support.ui import WebDriverWait, Select
+    from selenium.webdriver.support import expected_conditions as EC
+    from selenium.webdriver.chrome.options import Options
+    SELENIUM_AVAILABLE = True
+except ImportError:
+    SELENIUM_AVAILABLE = False
 
 from diagnostico.models import (
     Cuestionario, Pregunta, Diagnostico,
@@ -29,12 +36,39 @@ from diagnostico.models import (
 from usuarios.models import Departamento, Rol, PerfilUsuario
 
 
+def requires_selenium(test_func):
+    """Decorador para pruebas que requieren Selenium"""
+    return unittest.skipUnless(
+        SELENIUM_AVAILABLE,
+        "Selenium no está instalado. Instalar con: pip install selenium"
+    )(test_func)
+
+
 class DiagnosticoTransformacionDigitalAceptacionTestCase(TestCase):
     """
     Escenario PA-03: Diagnóstico de transformación digital
     Como directivo universitario quiero evaluar el nivel de transformación digital 
     de mi facultad para identificar áreas de mejora y tomar decisiones estratégicas
     """
+
+    def get_or_create_perfil(self, user, departamento, rol=None, **kwargs):
+        """Método auxiliar para obtener o crear perfil sin duplicados"""
+        try:
+            perfil = PerfilUsuario.objects.get(usuario=user)
+            perfil.departamento = departamento
+            if rol:
+                perfil.rol = rol
+            for key, value in kwargs.items():
+                setattr(perfil, key, value)
+            perfil.save()
+            return perfil
+        except PerfilUsuario.DoesNotExist:
+            return PerfilUsuario.objects.create(
+                usuario=user,
+                departamento=departamento,
+                rol=rol,
+                **kwargs
+            )
 
     def setUp(self):
         """Configuración inicial para pruebas de aceptación"""
@@ -63,9 +97,9 @@ class DiagnosticoTransformacionDigitalAceptacionTestCase(TestCase):
             last_name='González'
         )
 
-        # Crear perfil
-        self.perfil_directivo = PerfilUsuario.objects.create(
-            usuario=self.directivo,
+        # Crear perfil usando método auxiliar
+        self.perfil_directivo = self.get_or_create_perfil(
+            user=self.directivo,
             departamento=self.departamento,
             rol=self.rol_directivo,
             telefono='555-1000'
@@ -435,6 +469,25 @@ class UsabilidadDiagnosticoTestCase(TestCase):
     Enfocadas en la experiencia del usuario según los principios de diseño del documento
     """
 
+    def get_or_create_perfil(self, user, departamento, rol=None, **kwargs):
+        """Método auxiliar para obtener o crear perfil sin duplicados"""
+        try:
+            perfil = PerfilUsuario.objects.get(usuario=user)
+            perfil.departamento = departamento
+            if rol:
+                perfil.rol = rol
+            for key, value in kwargs.items():
+                setattr(perfil, key, value)
+            perfil.save()
+            return perfil
+        except PerfilUsuario.DoesNotExist:
+            return PerfilUsuario.objects.create(
+                usuario=user,
+                departamento=departamento,
+                rol=rol,
+                **kwargs
+            )
+
     def setUp(self):
         self.client = Client()
 
@@ -451,8 +504,9 @@ class UsabilidadDiagnosticoTestCase(TestCase):
             last_name='Martínez'
         )
 
-        PerfilUsuario.objects.create(
-            usuario=self.directivo,
+        # Usar método auxiliar
+        self.get_or_create_perfil(
+            user=self.directivo,
             departamento=self.departamento
         )
 
@@ -522,6 +576,25 @@ class IntegracionReportesTestCase(TestCase):
     Verificar el flujo completo desde diagnóstico hasta reporte
     """
 
+    def get_or_create_perfil(self, user, departamento, rol=None, **kwargs):
+        """Método auxiliar para obtener o crear perfil sin duplicados"""
+        try:
+            perfil = PerfilUsuario.objects.get(usuario=user)
+            perfil.departamento = departamento
+            if rol:
+                perfil.rol = rol
+            for key, value in kwargs.items():
+                setattr(perfil, key, value)
+            perfil.save()
+            return perfil
+        except PerfilUsuario.DoesNotExist:
+            return PerfilUsuario.objects.create(
+                usuario=user,
+                departamento=departamento,
+                rol=rol,
+                **kwargs
+            )
+
     def setUp(self):
         self.client = Client()
 
@@ -542,8 +615,9 @@ class IntegracionReportesTestCase(TestCase):
             password='supervisor123'
         )
 
-        PerfilUsuario.objects.create(
-            usuario=self.supervisor,
+        # Usar método auxiliar
+        self.get_or_create_perfil(
+            user=self.supervisor,
             departamento=self.departamento,
             rol=self.rol_supervisor
         )
@@ -594,6 +668,101 @@ class IntegracionReportesTestCase(TestCase):
                 departamento=self.departamento)
             self.assertEqual(diagnosticos.count(), 1)
             self.assertEqual(diagnosticos.first().nivel_general, 3.8)
+
+
+# Clase adicional para pruebas con Selenium (condicional)
+@requires_selenium
+class SeleniumDiagnosticoTestCase(TestCase):
+    """
+    Pruebas de interfaz de usuario usando Selenium
+    Solo se ejecutan si Selenium está disponible
+    """
+
+    def get_or_create_perfil(self, user, departamento, rol=None, **kwargs):
+        """Método auxiliar para obtener o crear perfil sin duplicados"""
+        try:
+            perfil = PerfilUsuario.objects.get(usuario=user)
+            perfil.departamento = departamento
+            if rol:
+                perfil.rol = rol
+            for key, value in kwargs.items():
+                setattr(perfil, key, value)
+            perfil.save()
+            return perfil
+        except PerfilUsuario.DoesNotExist:
+            return PerfilUsuario.objects.create(
+                usuario=user,
+                departamento=departamento,
+                rol=rol,
+                **kwargs
+            )
+
+    def setUp(self):
+        if SELENIUM_AVAILABLE:
+            # Configurar WebDriver con opciones para testing
+            options = Options()
+            options.add_argument('--headless')  # Ejecutar sin interfaz gráfica
+            options.add_argument('--no-sandbox')
+            options.add_argument('--disable-dev-shm-usage')
+
+            try:
+                self.driver = webdriver.Chrome(options=options)
+                self.driver.implicitly_wait(10)
+            except Exception as e:
+                self.skipTest(f"No se pudo inicializar WebDriver: {e}")
+
+        # Configurar datos de prueba
+        self.departamento = Departamento.objects.create(
+            nombre="Selenium Test",
+            ubicacion="Campus Virtual"
+        )
+
+        self.user = User.objects.create_user(
+            username='seleniumuser',
+            password='selenium123'
+        )
+
+        self.get_or_create_perfil(
+            user=self.user,
+            departamento=self.departamento
+        )
+
+    def tearDown(self):
+        if SELENIUM_AVAILABLE and hasattr(self, 'driver'):
+            self.driver.quit()
+
+    def test_navegacion_completa_diagnostico_selenium(self):
+        """
+        CP-PA-06: Prueba de navegación completa usando Selenium
+        Verificar flujo completo de usuario en el navegador
+        """
+        if not SELENIUM_AVAILABLE:
+            self.skipTest("Selenium no disponible")
+
+        # Esta prueba se ejecutaría solo si Selenium está disponible
+        # y se configuró correctamente el WebDriver
+
+        # GIVEN: Usuario en la página de login
+        self.driver.get('http://localhost:8000/login/')
+
+        # WHEN: Realiza login
+        username_field = self.driver.find_element(By.NAME, 'username')
+        password_field = self.driver.find_element(By.NAME, 'password')
+
+        username_field.send_keys('seleniumuser')
+        password_field.send_keys('selenium123')
+
+        login_button = self.driver.find_element(
+            By.CSS_SELECTOR, 'button[type="submit"]')
+        login_button.click()
+
+        # THEN: Debería redirigir al dashboard
+        WebDriverWait(self.driver, 10).until(
+            EC.presence_of_element_located((By.TAG_NAME, 'h1'))
+        )
+
+        # Verificar que llegó al dashboard
+        self.assertIn('Dashboard', self.driver.title)
 
 
 if __name__ == '__main__':
