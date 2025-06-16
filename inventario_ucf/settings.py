@@ -20,7 +20,6 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    # Aplicaciones propias
     'usuarios.apps.UsuariosConfig',
     'inventario.apps.InventarioConfig',
     'locales.apps.LocalesConfig',
@@ -36,7 +35,6 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    # Middleware de protección de reportes
     'usuarios.middleware.ReportesPermissionMiddleware',
 ]
 
@@ -115,7 +113,7 @@ LOGS_DIR = os.path.join(BASE_DIR, 'logs')
 if not os.path.exists(LOGS_DIR):
     os.makedirs(LOGS_DIR)
 
-# Configuración de logging para desarrollo (CORREGIDA)
+# Configuración de logging
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
@@ -158,7 +156,7 @@ LOGGING = {
     },
 }
 
-# Configuración de caché (opcional para producción)
+# Configuración de caché
 CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
@@ -180,3 +178,16 @@ X_FRAME_OPTIONS = 'DENY'
 # Configuración de archivos
 FILE_UPLOAD_MAX_MEMORY_SIZE = 52428800
 DATA_UPLOAD_MAX_MEMORY_SIZE = 52428800
+
+# Crear directorio de media si no existe
+if not os.path.exists(MEDIA_ROOT):
+    os.makedirs(MEDIA_ROOT, mode=0o755)
+
+# Crear directorio de reportes
+REPORTES_DIR = os.path.join(MEDIA_ROOT, 'reportes')
+if not os.path.exists(REPORTES_DIR):
+    os.makedirs(REPORTES_DIR, mode=0o755)
+
+# Crear directorio de logs si no existe
+if not os.path.exists(LOGS_DIR):
+    os.makedirs(LOGS_DIR, mode=0o755)

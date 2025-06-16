@@ -234,6 +234,8 @@ def dashboard_view(request):
         return redirect('reportes_index')
 
 
+# En reportes/views.py - Reemplazar la vista inventario_report_view
+
 @supervisor_o_admin_requerido
 def inventario_report_view(request):
     """Reporte de inventario - Solo supervisores y admins"""
@@ -244,11 +246,29 @@ def inventario_report_view(request):
 
         form = InventarioReportForm()
 
-        # Si es una petición POST, procesar el formulario
-        if request.method == 'POST':
-            form = InventarioReportForm(request.POST)
+        # Si es una petición POST o GET con parámetros, procesar el formulario
+        if request.method == 'POST' or request.GET:
+            form = InventarioReportForm(request.POST or request.GET)
             if form.is_valid():
-                return redirect('inventario_report_result')
+                formato = form.cleaned_data.get('formato', 'vista')
+
+                # Si el formato es PDF o Excel, redirigir a exportación
+                if formato in ['pdf', 'excel']:
+                    from django.http import QueryDict
+                    params = QueryDict(mutable=True)
+                    params.update(request.GET if request.method ==
+                                  'GET' else request.POST)
+
+                    # Construir URL de exportación
+                    from django.urls import reverse
+                    export_url = reverse('export_inventario', kwargs={
+                                         'format': formato})
+                    redirect_url = f"{export_url}?{params.urlencode()}"
+
+                    return redirect(redirect_url)
+                else:
+                    # Para formato 'vista', ir a resultados
+                    return redirect('inventario_report_result')
 
         context = {
             'form': form,
@@ -741,26 +761,295 @@ def transformacion_digital_report_result_view(request):
 # Funciones de exportación (también protegidas)
 @supervisor_o_admin_requerido
 def export_inventario_view(request, format):
+    print(f"Exportando {format} - Filtros: {request.GET}")
     """Exportar reporte de inventario"""
-    # Implementar lógica de exportación
-    messages.info(request, f'Función de exportación {format} en desarrollo.')
-    return redirect('inventario_report')
+    try:
+        from inventario.models import Activo, Hardware, Software
+        from .forms import InventarioReportForm
+        from .utils import PDFExporter, ExcelExporter, export_queryset_to_pdf, export_queryset_to_excel
+
+        # Procesar filtros del GET request
+        form = InventarioReportForm(request.GET)
+
+        if form.is_valid():
+            # Aplicar filtros según el formulario
+            queryset = Activo.objects.all()
+
+            # Filtrar por tipo
+            tipo = form.cleaned_data.get('tipo')
+            if tipo == 'hardware':
+                hardware_ids = Hardware.objects.values_list(
+                    'activo_id', flat=True)
+                queryset = queryset.filter(id__in=hardware_ids)
+            elif tipo == 'software':
+                software_ids = Software.objects.values_list(
+                    'activo_id', flat=True)
+                queryset = queryset.filter(id__in=software_ids)
+
+            # Filtrar por departamento
+            departamento = form.cleaned_data.get('departamento')
+            if departamento:
+                queryset = queryset.filter(departamento=departamento)
+
+            # Filtrar por estado
+            estado = form.cleaned_data.get('estado')
+            if estado:
+                queryset = queryset.filter(estado=estado)
+
+            # Filtrar por fechas
+            fecha_inicio = form.cleaned_data.get('fecha_inicio')
+            fecha_fin = form.cleaned_data.get('fecha_fin')
+
+            if fecha_inicio:
+                queryset = queryset.filter(fecha_adquisicion__gte=fecha_inicio)
+            if fecha_fin:
+                queryset = queryset.filter(fecha_adquisicion__lte=fecha_fin)
+
+            queryset = queryset.select_related(
+                'departamento').order_by('-fecha_adquisicion')
+
+            # Definir campos para el reporte
+            fields = [
+                {'name': 'id', 'label': 'ID'},
+                {'name': 'nombre', 'label': 'Nombre'},
+                {'name': 'get_tipo_display', 'label': 'Tipo'},
+                {'name': 'departamento.nombre', 'label': 'Departamento'},
+                {'name': 'get_estado_display', 'label': 'Estado'},
+                {'name': 'valor_adquisicion', 'label': 'Valor Adquisición'},
+                {'name': 'fecha_adquisicion', 'label': 'Fecha Adquisición'},
+            ]
+
+            # Preparar título y filtros para el reporte
+            titulo = "Reporte de Inventario"
+            filtros = {}
+
+            if tipo:
+                filtros['Tipo'] = tipo.title()
+            if departamento:
+                filtros['Departamento'] = departamento.nombre
+            if estado:
+                filtros['Estado'] = estado.replace('_', ' ').title()
+            if fecha_inicio:
+                filtros['Fecha desde'] = fecha_inicio.strftime('%d/%m/%Y')
+            if fecha_fin:
+                filtros['Fecha hasta'] = fecha_fin.strftime('%d/%m/%Y')
+
+            # Generar reporte según formato
+            if format.lower() == 'pdf':
+                return export_queryset_to_pdf(
+                    queryset=queryset,
+                    fields=fields,
+                    title=titulo,
+                    filters=filtros,
+                    landscape=True
+                )
+            elif format.lower() == 'excel':
+                return export_queryset_to_excel(
+                    queryset=queryset,
+                    fields=fields,
+                    title=titulo,
+                    filters=filtros
+                )
+            else:
+                messages.error(request, 'Formato de exportación no válido.')
+                return redirect('inventario_report')
+        else:
+            messages.error(request, 'Error en los filtros del reporte.')
+            return redirect('inventario_report')
+
+    except ImportError as e:
+        messages.error(
+            request, f'Error: Dependencias faltantes para exportación. {str(e)}')
+        return redirect('inventario_report')
+    except Exception as e:
+        messages.error(request, f'Error al generar el reporte: {str(e)}')
+        return redirect('inventario_report')
 
 
 @supervisor_o_admin_requerido
 def export_mantenimiento_view(request, format):
+    print(f"Exportando {format} - Filtros: {request.GET}")
     """Exportar reporte de mantenimientos"""
-    # Implementar lógica de exportación
-    messages.info(request, f'Función de exportación {format} en desarrollo.')
-    return redirect('mantenimiento_report')
+    try:
+        from inventario.models import Mantenimiento
+        from .forms import MantenimientoReportForm
+        from .utils import export_queryset_to_pdf, export_queryset_to_excel
+
+        # Procesar filtros del GET request
+        form = MantenimientoReportForm(request.GET)
+
+        if form.is_valid():
+            # Aplicar filtros
+            queryset = Mantenimiento.objects.select_related(
+                'activo', 'responsable')
+
+            # Filtros del formulario
+            tipo = form.cleaned_data.get('tipo')
+            if tipo:
+                queryset = queryset.filter(tipo=tipo)
+
+            estado = form.cleaned_data.get('estado')
+            if estado:
+                queryset = queryset.filter(estado=estado)
+
+            responsable = form.cleaned_data.get('responsable')
+            if responsable:
+                queryset = queryset.filter(responsable=responsable)
+
+            fecha_inicio = form.cleaned_data.get('fecha_inicio')
+            fecha_fin = form.cleaned_data.get('fecha_fin')
+
+            if fecha_inicio:
+                queryset = queryset.filter(fecha_programada__gte=fecha_inicio)
+            if fecha_fin:
+                queryset = queryset.filter(fecha_programada__lte=fecha_fin)
+
+            queryset = queryset.order_by('-fecha_programada')
+
+            # Definir campos para el reporte
+            fields = [
+                {'name': 'id', 'label': 'ID'},
+                {'name': 'activo.nombre', 'label': 'Activo'},
+                {'name': 'get_tipo_display', 'label': 'Tipo'},
+                {'name': 'fecha_programada', 'label': 'Fecha Programada'},
+                {'name': 'fecha_realizacion', 'label': 'Fecha Realización'},
+                {'name': 'responsable.get_full_name', 'label': 'Responsable'},
+                {'name': 'get_estado_display', 'label': 'Estado'},
+                {'name': 'costo', 'label': 'Costo'},
+                {'name': 'descripcion', 'label': 'Descripción'},
+            ]
+
+            # Preparar título y filtros para el reporte
+            titulo = "Reporte de Mantenimientos"
+            filtros = {}
+
+            if tipo:
+                filtros['Tipo'] = tipo.title()
+            if estado:
+                filtros['Estado'] = estado.replace('_', ' ').title()
+            if responsable:
+                filtros['Responsable'] = responsable.get_full_name()
+            if fecha_inicio:
+                filtros['Fecha desde'] = fecha_inicio.strftime('%d/%m/%Y')
+            if fecha_fin:
+                filtros['Fecha hasta'] = fecha_fin.strftime('%d/%m/%Y')
+
+            # Generar reporte según formato
+            if format.lower() == 'pdf':
+                return export_queryset_to_pdf(
+                    queryset=queryset,
+                    fields=fields,
+                    title=titulo,
+                    filters=filtros,
+                    landscape=True
+                )
+            elif format.lower() == 'excel':
+                return export_queryset_to_excel(
+                    queryset=queryset,
+                    fields=fields,
+                    title=titulo,
+                    filters=filtros
+                )
+            else:
+                messages.error(request, 'Formato de exportación no válido.')
+                return redirect('mantenimiento_report')
+        else:
+            messages.error(request, 'Error en los filtros del reporte.')
+            return redirect('mantenimiento_report')
+
+    except ImportError as e:
+        messages.error(
+            request, f'Error: Dependencias faltantes para exportación. {str(e)}')
+        return redirect('mantenimiento_report')
+    except Exception as e:
+        messages.error(request, f'Error al generar el reporte: {str(e)}')
+        return redirect('mantenimiento_report')
 
 
 @supervisor_o_admin_requerido
 def export_diagnostico_view(request, format):
+    print(f"Exportando {format} - Filtros: {request.GET}")
     """Exportar reporte de diagnóstico"""
-    # Implementar lógica de exportación
-    messages.info(request, f'Función de exportación {format} en desarrollo.')
-    return redirect('transformacion_digital_report')
+    try:
+        from diagnostico.models import Diagnostico
+        from .forms import TransformacionDigitalReportForm
+        from .utils import export_queryset_to_pdf, export_queryset_to_excel
+
+        # Procesar filtros del GET request
+        form = TransformacionDigitalReportForm(request.GET)
+
+        if form.is_valid():
+            # Aplicar filtros
+            queryset = Diagnostico.objects.select_related(
+                'departamento', 'cuestionario', 'responsable'
+            )
+
+            departamento = form.cleaned_data.get('departamento')
+            if departamento:
+                queryset = queryset.filter(departamento=departamento)
+
+            fecha_inicio = form.cleaned_data.get('fecha_inicio')
+            fecha_fin = form.cleaned_data.get('fecha_fin')
+
+            if fecha_inicio:
+                queryset = queryset.filter(fecha__gte=fecha_inicio)
+            if fecha_fin:
+                queryset = queryset.filter(fecha__lte=fecha_fin)
+
+            queryset = queryset.order_by('-fecha')
+
+            # Definir campos para el reporte
+            fields = [
+                {'name': 'id', 'label': 'ID'},
+                {'name': 'departamento.nombre', 'label': 'Departamento'},
+                {'name': 'cuestionario.titulo', 'label': 'Cuestionario'},
+                {'name': 'fecha', 'label': 'Fecha'},
+                {'name': 'nivel_general', 'label': 'Nivel General'},
+                {'name': 'responsable.get_full_name', 'label': 'Responsable'},
+                {'name': 'observaciones', 'label': 'Observaciones'},
+            ]
+
+            # Preparar título y filtros para el reporte
+            titulo = "Reporte de Transformación Digital"
+            filtros = {}
+
+            if departamento:
+                filtros['Departamento'] = departamento.nombre
+            if fecha_inicio:
+                filtros['Fecha desde'] = fecha_inicio.strftime('%d/%m/%Y')
+            if fecha_fin:
+                filtros['Fecha hasta'] = fecha_fin.strftime('%d/%m/%Y')
+
+            # Generar reporte según formato
+            if format.lower() == 'pdf':
+                return export_queryset_to_pdf(
+                    queryset=queryset,
+                    fields=fields,
+                    title=titulo,
+                    filters=filtros,
+                    landscape=True
+                )
+            elif format.lower() == 'excel':
+                return export_queryset_to_excel(
+                    queryset=queryset,
+                    fields=fields,
+                    title=titulo,
+                    filters=filtros
+                )
+            else:
+                messages.error(request, 'Formato de exportación no válido.')
+                return redirect('transformacion_digital_report')
+        else:
+            messages.error(request, 'Error en los filtros del reporte.')
+            return redirect('transformacion_digital_report')
+
+    except ImportError as e:
+        messages.error(
+            request, f'Error: Módulo de diagnóstico no disponible. {str(e)}')
+        return redirect('transformacion_digital_report')
+    except Exception as e:
+        messages.error(request, f'Error al generar el reporte: {str(e)}')
+        return redirect('transformacion_digital_report')
 
 
 @supervisor_o_admin_requerido

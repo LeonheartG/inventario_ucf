@@ -18,7 +18,7 @@
                     <h6 class="m-0 font-weight-bold">Filtros</h6>
                 </div>
                 <div class="card-body">
-                    <form method="get" class="row g-3">
+                    <form method="get" class="row g-3" id="reportForm">
                         <div class="col-md-3">
                             <label for="tipo" class="form-label">Tipo</label>
                             <select class="form-select" id="tipo" name="tipo">
@@ -49,12 +49,13 @@
                             </select>
                         </div>
                         <div class="col-md-3">
-    <label for="formato" class="form-label">Formato</label>
-    <select class="form-select" id="formato" name="formato">
-        <option value="pdf" {% if form.formato.value == 'pdf' %}selected{% endif %}>PDF</option>
-        <option value="excel" {% if form.formato.value == 'excel' %}selected{% endif %}>Excel</option>
-    </select>
-</div>
+                            <label for="formato" class="form-label">Formato</label>
+                            <select class="form-select" id="formato" name="formato">
+                                <option value="vista">Ver en pantalla</option>
+                                <option value="pdf" {% if form.formato.value == 'pdf' %}selected{% endif %}>Descargar PDF</option>
+                                <option value="excel" {% if form.formato.value == 'excel' %}selected{% endif %}>Descargar Excel</option>
+                            </select>
+                        </div>
                         <div class="col-md-6">
                             <label for="fecha_inicio" class="form-label">Fecha de adquisición desde</label>
                             <input type="date" class="form-control" id="fecha_inicio" name="fecha_inicio" value="{{ form.fecha_inicio.value|date:'Y-m-d'|default:'' }}">
@@ -64,7 +65,10 @@
                             <input type="date" class="form-control" id="fecha_fin" name="fecha_fin" value="{{ form.fecha_fin.value|date:'Y-m-d'|default:'' }}">
                         </div>
                         <div class="col-12 mt-3 text-end">
-                            <button type="submit" class="btn btn-primary">Generar Reporte</button>
+                            <button type="submit" class="btn btn-primary" id="generateBtn">
+                                <i class="fas fa-play me-2"></i>
+                                <span id="btnText">Generar Reporte</span>
+                            </button>
                         </div>
                     </form>
                 </div>
@@ -117,4 +121,61 @@
 
 {% block extra_js %}
 <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('reportForm');
+    const formatoSelect = document.getElementById('formato');
+    const generateBtn = document.getElementById('generateBtn');
+    const btnText = document.getElementById('btnText');
+    
+    // Actualizar texto del botón según el formato
+    function updateButtonText() {
+        const formato = formatoSelect.value;
+        const icon = generateBtn.querySelector('i');
+        
+        switch(formato) {
+            case 'pdf':
+                icon.className = 'fas fa-file-pdf me-2';
+                btnText.textContent = 'Descargar PDF';
+                generateBtn.className = 'btn btn-danger';
+                break;
+            case 'excel':
+                icon.className = 'fas fa-file-excel me-2';
+                btnText.textContent = 'Descargar Excel';
+                generateBtn.className = 'btn btn-success';
+                break;
+            default:
+                icon.className = 'fas fa-play me-2';
+                btnText.textContent = 'Ver Reporte';
+                generateBtn.className = 'btn btn-primary';
+        }
+    }
+    
+    // Actualizar al cambiar formato
+    formatoSelect.addEventListener('change', updateButtonText);
+    updateButtonText(); // Ejecutar al cargar
+    
+    // Manejar envío del formulario
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(form);
+        const params = new URLSearchParams(formData);
+        const formato = formatoSelect.value;
+        
+        if (formato === 'pdf' || formato === 'excel') {
+            // Redireccionar a exportación
+            const exportUrl = `{% url 'export_inventario' format='FORMAT' %}`.replace('FORMAT', formato);
+            const fullUrl = `${exportUrl}?${params.toString()}`;
+            
+            // Abrir en nueva pestaña para descarga
+            window.open(fullUrl, '_blank');
+        } else {
+            // Redireccionar a vista normal
+            const resultUrl = `{% url 'inventario_report_result' %}?${params.toString()}`;
+            window.location.href = resultUrl;
+        }
+    });
+});
+</script>
 {% endblock %}

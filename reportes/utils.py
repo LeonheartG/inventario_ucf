@@ -598,9 +598,26 @@ def export_queryset_to_pdf(queryset, fields, title, filename=None, **kwargs):
     for obj in queryset:
         row = []
         for field in fields:
-            value = getattr(obj, field['name'], '')
-            if callable(value):
-                value = value()
+            # Manejar campos anidados como 'departamento.nombre'
+            field_name = field['name']
+            if '.' in field_name:
+                # Campo anidado
+                attrs = field_name.split('.')
+                value = obj
+                for attr in attrs:
+                    value = getattr(value, attr, '') if value else ''
+                    if callable(value):
+                        value = value()
+            else:
+                # Campo simple
+                value = getattr(obj, field_name, '')
+                if callable(value):
+                    value = value()
+
+            # Manejar valores None
+            if value is None:
+                value = ''
+
             row.append(str(value))
         table_data.append(row)
 
@@ -609,6 +626,7 @@ def export_queryset_to_pdf(queryset, fields, title, filename=None, **kwargs):
         'title': title,
         'table_data': table_data,
         'landscape': kwargs.get('landscape', len(headers) > 6),
+        'filters': kwargs.get('filters', {}),
         **kwargs
     }
 
@@ -628,9 +646,26 @@ def export_queryset_to_excel(queryset, fields, title, filename=None, **kwargs):
     for obj in queryset:
         row = []
         for field in fields:
-            value = getattr(obj, field['name'], '')
-            if callable(value):
-                value = value()
+            # Manejar campos anidados como 'departamento.nombre'
+            field_name = field['name']
+            if '.' in field_name:
+                # Campo anidado
+                attrs = field_name.split('.')
+                value = obj
+                for attr in attrs:
+                    value = getattr(value, attr, '') if value else ''
+                    if callable(value):
+                        value = value()
+            else:
+                # Campo simple
+                value = getattr(obj, field_name, '')
+                if callable(value):
+                    value = value()
+
+            # Manejar valores None
+            if value is None:
+                value = ''
+
             row.append(value)
         data.append(row)
 
@@ -639,6 +674,7 @@ def export_queryset_to_excel(queryset, fields, title, filename=None, **kwargs):
         'title': title,
         'headers': headers,
         'data': data,
+        'filters': kwargs.get('filters', {}),
         **kwargs
     }
 
